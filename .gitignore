@@ -1,4 +1,5 @@
 webserv
+objs
 *.o
 *.out
 *.dSYM

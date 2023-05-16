@@ -3,34 +3,40 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: aperin <aperin@student.42.fr>              +#+  +:+       +#+         #
+#    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/05/12 13:10:16 by aperin           ###   ########.fr        #
+#    Updated: 2023/05/16 17:05:43 by yhuberla         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME		= webserv
 
-SRC_FILE	= main.cpp
+SRC_FILE	= main
 				
 SRCS_DIR	= srcs
 OBJSDIR		= objs
 INCDIR		= includes
 
-SRCS		= $(addprefix ${SRCS_DIR}/, ${SRC_FILE})
+SRCS		= $(addprefix ${SRCS_DIR}/, $(addsuffix .cpp, ${SRC_FILE}))
 OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILE})))
 OBJS_DIR	= $(sort $(dir $(OBJS)))
+
+# ===---===---===---===---===---===---===---===---===---===---===---===---
 
 CC			= c++
 CPPFLAGS	= -Wall -Wextra -Werror -std=c++98
 INCS		= $(foreach d, $(INCDIR), -I$d)
 
+# ===---===---===---===---===---===---===---===---===---===---===---===---
+
 ${OBJSDIR}/%.o: ${SRCS_DIR}/%.cpp
-			@mkdir -p ${OBJSDIR} ${OBJS_DIR}
 			${CC} ${CPPFLAGS} ${INCS} -c -o $@ $<
 
-all:		${NAME}
+all:		${OBJSDIR} ${NAME}
+
+$(OBJSDIR):
+			@mkdir -p ${OBJSDIR}
 
 ${NAME}:	${OBJS}
 			${CC} ${CPPFLAGS} ${OBJS} -o ${NAME}
