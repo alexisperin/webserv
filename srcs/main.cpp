@@ -6,7 +6,7 @@
 /*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/12 11:22:56 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/15 12:56:30 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/17 09:34:25 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ int main()
 	}
 	if (listen(server_fd, 10) < 0)
 	{
-		perror("In listen");
+		perror("listen");
 		return -1;
 	}
 

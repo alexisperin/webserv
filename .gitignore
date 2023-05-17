@@ -1,4 +1,5 @@
 webserv
+.DS_Store
 *.o
 *.out
 *.dSYM
