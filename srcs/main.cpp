@@ -6,7 +6,7 @@
 /*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/12 11:22:56 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/17 11:44:26 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/17 15:46:20 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 int main(int ac, char **av)
 {
 	if (ac != 2) {
-		std::cerr << "Usage: ./webserv <file>" << std::endl;
+		std::cerr << "Usage: ./webserv <file.conf>" << std::endl;
 		return (1);
 	}
 	std::string file_name(av[1]);
@@ -28,11 +28,15 @@ int main(int ac, char **av)
 	{
 		Webserv my_serv(file_name);
 		my_serv.display_serv_content();
+		my_serv.setup_server();
 	}
 	catch (std::exception &e)
 	{
 		std::cerr << e.what() << std::endl;
+		return (1);
 	}
+
+	
 	return (0);
 }
 

@@ -6,7 +6,7 @@
 #    By: aperin <aperin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/05/17 10:55:54 by aperin           ###   ########.fr        #
+#    Updated: 2023/05/17 13:14:16 by aperin           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,17 +24,18 @@ OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILE})))
 OBJS_DIR	= $(sort $(dir $(OBJS)))
 
 CC			= c++
+SAN			= -fsanitize=address -g
 CPPFLAGS	= -Wall -Wextra -Werror -std=c++98
 INCS		= $(foreach d, $(INCDIR), -I$d)
 
 ${OBJSDIR}/%.o: ${SRCS_DIR}/%.cpp
 			@mkdir -p ${OBJSDIR} ${OBJS_DIR}
-			${CC} ${CPPFLAGS} ${INCS} -c -o $@ $<
+			${CC} $(SAN) ${CPPFLAGS} ${INCS} -c -o $@ $<
 
 all:		${NAME}
 
 ${NAME}:	${OBJS}
-			${CC} ${CPPFLAGS} ${OBJS} -o ${NAME}
+			${CC} ${SAN} ${CPPFLAGS} ${OBJS} -o ${NAME}
 
 clean:
 			rm -rf ${OBJSDIR}
