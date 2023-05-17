@@ -6,13 +6,14 @@
 #    By: aperin <aperin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/05/12 13:10:16 by aperin           ###   ########.fr        #
+#    Updated: 2023/05/17 10:55:54 by aperin           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME		= webserv
 
-SRC_FILE	= main.cpp
+SRC_FILE	= main.cpp\
+				Webserv.cpp
 				
 SRCS_DIR	= srcs
 OBJSDIR		= objs
