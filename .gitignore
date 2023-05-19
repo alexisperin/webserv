@@ -1,5 +1,7 @@
 webserv
 objs
+.DS_Store
+.vscode
 *.o
 *.out
 *.dSYM
