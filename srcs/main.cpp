@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/12 11:22:56 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/19 11:58:13 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/23 15:17:53 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ int main(int ac, char **av)
 	try
 	{
 		Webserv my_serv(file_name);
-		my_serv.display_serv_content();
+		my_serv.display_servs_content();
 		my_serv.setup_server();
 	}
 	catch (std::exception &e)

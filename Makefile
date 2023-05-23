@@ -6,17 +6,17 @@
 #    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/05/19 11:59:06 by yhuberla         ###   ########.fr        #
+#    Updated: 2023/05/23 15:17:33 by yhuberla         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME		= webserv
 
-SRC_FILE	= main.cpp Webserv.cpp
-
 SRCS_DIR	= srcs
 OBJSDIR		= objs
 INCDIR		= includes
+
+SRC_FILE	= main Webserv Server
 
 SRCS		= $(addprefix ${SRCS_DIR}/, $(addsuffix .cpp, ${SRC_FILE}))
 OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILE})))

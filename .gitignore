@@ -1,5 +1,6 @@
 webserv
 objs
+cgi_tester
 tester
 YoupiBanane
 .DS_Store

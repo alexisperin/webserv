@@ -1,0 +1,8 @@
+The following information is from https://curl.se/docs/httpscripting.html:
+Using curl we can reproduce http methods:
+ - GET curl localhost:80
+ - HEAD curl --head localhost:80
+ - POST curl --data "birthyear=1905" localhost:80 / -d works too
+ - PUT curl --upload-file Makefile localhost:80
+ - GET+cookie curl --cookie "name=Daniel" localhost:80
+ - ANY curl -X ANY(DELETE for ex.) -> will work but not best apparently
