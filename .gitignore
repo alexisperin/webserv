@@ -1,5 +1,7 @@
 webserv
 objs
+tester
+YoupiBanane
 .DS_Store
 .vscode
 *.o
