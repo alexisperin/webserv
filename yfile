@@ -6,3 +6,8 @@ Using curl we can reproduce http methods:
  - PUT curl --upload-file Makefile localhost:80
  - GET+cookie curl --cookie "name=Daniel" localhost:80
  - ANY curl -X ANY(DELETE for ex.) -> will work but not best apparently
+
+
+ To check if a path is valid in a C++ manner (metacharacters not allowed)
+ 	std::ifstream s(char *path);
+	s.good();
