@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/23 15:45:04 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/23 18:29:33 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,46 @@ Server::~Server(void)
 //                                  Private                                   //
 // ************************************************************************** //
 
+void Server::analyse_request(int socket_fd, char buffer[30000])
+{
+	std::string bufstr(buffer);
+	std::cout << bufstr << std::endl;
+
+	if (!bufstr.compare(0, 4, "GET "))
+	{
+		std::cout << "GET DETECTED" << std::endl;
+		std::string file_content = "";
+		std::string file_abs_path = this->_root;
+
+		if (!bufstr.compare(4, 2, "/ "))
+		{
+			file_abs_path += this->_index_files.front();
+		}
+		else if (!bufstr.compare(4, 1, "/"))
+		{
+			file_abs_path += bufstr.substr(5, bufstr.find(" ", 5) - 5);
+		}
+		else
+		{
+			file_abs_path += "404.html";
+		}
+
+		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
+		std::ifstream indata(file_abs_path);
+		if (!indata.is_open())
+			throw Webserv::InvalidFileException();
+		std::string line;
+		while (!indata.eof()) {
+			std::getline( indata, line );
+			file_content += line + '\n';
+		}
+		indata.close();
+	
+		std::string content("HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ");
+		content += std::to_string(file_content.size()) + "\n\n" + file_content;
+		send(socket_fd, content.c_str(), content.size(), 0);
+	}
+}
 
 // ************************************************************************** //
 //                                  Public                                    //
@@ -212,6 +252,80 @@ void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)
 	std::list<int>::iterator ite = this->_ports.end();
 	for (; it != ite; it++)
 		all_ports.insert(*it);
+}
+
+void Server::setup_server(void)
+{
+	// struct pollfd pfds[this->_ports.size()]; //to be this->_servers.size()
+
+	std::list<int>::iterator it = this->_ports.begin();
+	std::list<int>::iterator ite = this->_ports.end();
+	
+	pid_t pid;
+	for (; it != ite; it++)
+	{
+		std::cout << "Setting up port " << *it << '.' << std::endl;
+		if ((pid = fork()) == -1)
+		{
+			perror("fork");
+			return ;
+		}
+		if (!pid)
+		{
+			int server_fd, new_socket;
+			ssize_t valread;
+			struct sockaddr_in address;
+			int addrlen = sizeof(address);
+
+
+			if ((server_fd = socket(PF_INET, SOCK_STREAM, 0)) == 0)
+			{
+				perror("socket");
+				return ;
+			}
+
+			address.sin_family = PF_INET;
+			address.sin_addr.s_addr = INADDR_ANY;
+			address.sin_port = htons(*it);
+
+			if (bind(server_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
+			{
+				perror("bind");
+				return ;
+			}
+		
+			if (listen(server_fd, 10) < 0)
+			{
+				perror("listen");
+				return ;
+			}
+
+			while(1)
+			{
+				std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
+				if ((new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t*) &addrlen)) < 0)
+				{
+					perror("accept");
+					return ;
+				}
+
+				char buffer[30000] = {0};
+				valread = recv(new_socket, buffer, 30000, 0);
+				analyse_request(new_socket, buffer);
+				std::cout << "------------------content message sent-------------------\n";
+				close(new_socket);
+			}
+		}
+	}
+}
+
+void Server::waitup_server(void)
+{
+	std::list<int>::iterator it = this->_ports.begin();
+	std::list<int>::iterator ite = this->_ports.end();
+
+	for (; it != ite; it++)
+		waitpid(-1, NULL, 0);
 }
 
 // ************************************************************************** //

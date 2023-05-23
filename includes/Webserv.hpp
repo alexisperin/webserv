@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:12:47 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/23 15:47:39 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/23 17:18:41 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ class Webserv
 		~Webserv(void);
 
 		void display_servs_content(void);
-		void setup_server(void);
+		void setup_servers(void);
 
 	class InvalidFileException : public std::exception
 	{

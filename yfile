@@ -11,3 +11,6 @@ Using curl we can reproduce http methods:
  To check if a path is valid in a C++ manner (metacharacters not allowed)
  	std::ifstream s(char *path);
 	s.good();
+
+
+~/Documents not working in .conf file

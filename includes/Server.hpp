@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/23 15:44:53 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/23 17:52:49 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 # include <string>
 # include <exception>
 # include <iostream>
+# include <sys/wait.h>
 
 class Server {
 	private:
@@ -29,6 +30,8 @@ class Server {
 		std::list<std::string> _index_files;
 		int _body_size;
 		std::map<int, std::string> _error_map;
+
+		void analyse_request(int socket_fd, char buffer[30000]);
 	
 	public:
 		Server(void);
@@ -36,6 +39,8 @@ class Server {
 
 		void check_set_default(void);
 		void display_serv_content(void);
+		void setup_server(void);
+		void waitup_server(void);
 		void compare_block_info(std::string line);
 		void add_ports(std::set<int> &all_ports, size_t *number_of_ports);
 
