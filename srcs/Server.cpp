@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/24 16:37:39 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/24 18:15:12 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,7 +144,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
-		if (iss.fail())
+		if (iss.fail() || expected_size > this->_body_size * 1000000)
 			return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
 		std::string file_abs_path = this->_root;
@@ -441,16 +441,17 @@ void Server::setup_server(void)
 			return ;
 		}
 
-		std::cout << ready << "socket(s) ready" << std::endl;
-
+		(ready == 1)
+			? std::cout << "1 socket ready" << std::endl
+			: std::cout << ready << " sockets ready" << std::endl;
 		for (size_t index = 0; index < this->_ports.size(); index++) {
 
 			if (pfds[index].revents != 0) {
-				std::cout << "  socket = " << pfds[index].fd << "; events: ";
+				std::cout << "  - socket = " << pfds[index].fd << "; events: ";
 				(pfds[index].revents & POLLIN)  ? std::cout << "POLLIN "  : std::cout << "";
 				(pfds[index].revents & POLLHUP) ? std::cout << "POLLHUP " : std::cout << "";
 				(pfds[index].revents & POLLERR) ? std::cout << "POLLERR " : std::cout << "";
-				std::cout << std::endl;
+				std::cout << std::endl << std::endl;
 
 				addrlen = sizeof(address[index]);
 				if ((new_socket = accept(pfds[index].fd, (struct sockaddr *) &address[index], (socklen_t*) &addrlen)) < 0)
