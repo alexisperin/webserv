@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/23 17:52:49 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/24 12:56:24 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,10 +28,11 @@ class Server {
 		std::list<std::string> _server_names; // server_name bla.com;
 		std::string _root;
 		std::list<std::string> _index_files;
-		int _body_size;
+		size_t _body_size;
 		std::map<int, std::string> _error_map;
 
 		void analyse_request(int socket_fd, char buffer[30000]);
+		void receive_put_content(int socket_fd, char buffer[30000], size_t expected_size);
 	
 	public:
 		Server(void);
