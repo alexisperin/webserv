@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/24 13:03:00 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/24 15:18:21 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,31 +35,35 @@ static std::string read_data(std::ifstream &indata)
 	std::string line;
 	while (!indata.eof()) {
 		std::getline( indata, line );
-		res += line + '\n';
+		res += line;
+		if (!indata.eof())
+			res += '\n';
 	}
 	indata.close();
 	return (res);
 }
 
-void Server::receive_put_content(int socket_fd, char buffer[30000], size_t expected_size)
+static void send_error(int socket_fd, std::string errstr)
+{
+	std::string content = "HTTP/1.1 " + errstr + '\n';
+	send(socket_fd, content.c_str(), content.size(), 0);
+}
+
+void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstream &outfile, size_t expected_size)
 {
 	std::string bufstr(buffer);
 	std::cout << "bufstr size: " << bufstr.size() << std::endl;
-	std::cout << bufstr << std::endl;
+	// std::cout << bufstr << std::endl;
+	outfile << bufstr;
+
 	if (bufstr.size() > this->_body_size * 1000000)
 	{
 		std::cerr << "file size exceeds max_body_size of " << this->_body_size << "MB" << std::endl;
 
-		std::string content("HTTP/1.1 413 Payload Too Large\n");
-		send(socket_fd, content.c_str(), content.size(), 0);
-		return ;
+		return (send_error(socket_fd, "413 Payload Too Large"));
 	}
 	else if (bufstr.size() != expected_size)
-	{
-		std::string content("HTTP/1.1 412 Precondition Failed\n");
-		send(socket_fd, content.c_str(), content.size(), 0);
-		return ;
-	}
+		return (send_error(socket_fd, "412 Precondition Failed"));
 
 	std::string content("HTTP/1.1 200 OK\n");
 	send(socket_fd, content.c_str(), content.size(), 0);
@@ -113,59 +117,67 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		content += std::to_string(file_content.size()) + "\n\n" + file_content;
 		send(socket_fd, content.c_str(), content.size(), 0);
 	}
-	else if (!bufstr.compare(0, 4, "PUT "))
+	else if (!bufstr.compare(0, 4, "PUT ") || !bufstr.compare(0, 5, "POST "))
 	{
-		std::cout << "PUT DETECTED" << std::endl;
+		int post_offset = !bufstr.compare(0, 5, "POST ");
+
+		if (!post_offset)
+			std::cout << "PUT DETECTED" << std::endl;
+		else
+			std::cout << "POST DETECTED" << std::endl;
 
 		std::string line;
 		size_t index = bufstr.find("Content-Length: ");
 		if (index == std::string::npos)
-		{
-			std::string content("HTTP/1.1 411 Length Required\n");
-			send(socket_fd, content.c_str(), content.size(), 0);
-			return ;
-		}
+			return (send_error(socket_fd, "411 Length Required"));
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
 		if (iss.fail())
+			return (send_error(socket_fd, "412 Precondition Failed"));
+
+		std::string file_abs_path = this->_root;
+
+		if (!bufstr.compare(4 + post_offset, 2, "/ "))
 		{
-			std::string content("HTTP/1.1 412 Precondition Failed\n");
-			send(socket_fd, content.c_str(), content.size(), 0);
+			std::cerr << "Time to do some research boys, PUT / DOES exist." << std::endl;
 			return ;
 		}
-		
+		else if (!bufstr.compare(4 + post_offset, 1, "/"))
+		{
+			file_abs_path += bufstr.substr(5 + post_offset, bufstr.find(" ", 5 + post_offset) - (5 + post_offset));
+		}
+		else
+		{
+			std::cerr << "Time to do some research boys, PUT not/ DOES exist." << std::endl;
+			return ;
+		}
 
-		// std::string file_abs_path = this->_root;
-
-		// if (!bufstr.compare(4, 2, "/ "))
-		// {
-		// 	std::cerr << "Time to do some research boys, PUT / DOES exist." << std::endl;
-		// 	return ;
-		// }
-		// else if (!bufstr.compare(4, 1, "/"))
-		// {
-		// 	file_abs_path += bufstr.substr(5, bufstr.find(" ", 5) - 5);
-		// }
-		// else
-		// {
-		// 	file_abs_path += "404.html";
-		// }
-
-		// std::cout << "putting file: |" << file_abs_path << '|' << std::endl;
-		// std::ofstream indata(file_abs_path);
-		// std::string file_content;
-		// if (!indata.is_open())
-		// {
-		// 	std::cerr << "ofstream failed ????" << std::endl;
-		// 	return ;
-		// }
-		std::string content("HTTP/1.1 100 OK\n");
-		send(socket_fd, content.c_str(), content.size(), 0);
-
-		recv(socket_fd, buffer, 30000, 0);
-
-		receive_put_content(socket_fd, buffer, expected_size);
+		std::string content;
+		std::cout << "checking if file: |" << file_abs_path << "| exists" << std::endl;
+		std::ifstream indata(file_abs_path);
+		if (!indata.is_open())
+			content = "HTTP/1.1 201 Created\n";
+		else
+			content = "HTTP/1.1 100 Continue\n";
+		if (!post_offset)
+		{
+			std::ofstream outdata(file_abs_path, std::ofstream::trunc);
+			send(socket_fd, content.c_str(), content.size(), 0);
+			recv(socket_fd, buffer, 30000, 0);
+			receive_put_content(socket_fd, buffer, outdata, expected_size);
+		}
+		else
+		{
+			std::cout << "entering here" << std::endl;
+			std::ofstream outdata(file_abs_path);
+			send(socket_fd, content.c_str(), content.size(), 0);
+			if (post_offset)
+				return ;
+			recv(socket_fd, buffer, 30000, 0);
+			std::cout << "entering here too" << std::endl;
+			receive_put_content(socket_fd, buffer, outdata, expected_size);
+		}
 	}
 }
 
@@ -409,7 +421,7 @@ void Server::setup_server(void)
 				char buffer[30000] = {0};
 				valread = recv(new_socket, buffer, 30000, 0);
 				analyse_request(new_socket, buffer);
-				std::cout << "------------------content message sent-------------------\n";
+				std::cout << "------------------content message sent to " << new_socket << "-------------------\n";
 				close(new_socket);
 			}
 		}
