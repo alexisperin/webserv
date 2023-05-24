@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/23 17:42:13 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/24 16:38:27 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,8 +120,21 @@ void Webserv::setup_servers(void)
 	std::list<Server *>::iterator it = this->_servers.begin();
 	std::list<Server *>::iterator ite = this->_servers.end();
 	
+	pid_t pid;
 	for (; it != ite; it++)
-		(*it)->setup_server();
+	{
+		pid = fork();
+		if (pid == -1)
+		{
+			perror("fork");
+			return ;
+		}
+		if (!pid)
+		{
+			(*it)->setup_server();
+			return ;
+		}
+	}
 
 	it = this->_servers.begin();
 	ite = this->_servers.end();
@@ -152,4 +165,9 @@ const char* Webserv::InvalidFileContentException::what() const throw()
 const char* Webserv::DuplicatePortsException::what() const throw()
 {
 	return ("[Webserv::DuplicatePortsException] At least one port is used multiple times.");
+}
+
+const char* Webserv::MissingDefault404Exception::what() const throw()
+{
+	return ("[Webserv::MissingDefault404Exception] No default 404 file in root provided by conf file.");
 }

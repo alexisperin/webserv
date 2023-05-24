@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/24 15:18:21 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/24 16:37:39 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,9 +43,20 @@ static std::string read_data(std::ifstream &indata)
 	return (res);
 }
 
-static void send_error(int socket_fd, std::string errstr)
+void Server::send_error(int socket_fd, int err_code, std::string errstr)
 {
 	std::string content = "HTTP/1.1 " + errstr + '\n';
+	if (this->_error_map.find(err_code) != this->_error_map.end())
+	{
+		std::string file_abs_path = this->_root + this->_error_map[err_code];
+		std::ifstream newdata(file_abs_path);
+		if (!newdata.is_open())
+			throw Webserv::InvalidFileException();
+		std::string file_content = read_data(newdata);
+
+		content += "Content-Type:text/html\nContent-Length: ";
+		content += std::to_string(file_content.size()) + "\n\n" + file_content;
+	}
 	send(socket_fd, content.c_str(), content.size(), 0);
 }
 
@@ -60,10 +71,10 @@ void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstrea
 	{
 		std::cerr << "file size exceeds max_body_size of " << this->_body_size << "MB" << std::endl;
 
-		return (send_error(socket_fd, "413 Payload Too Large"));
+		return (send_error(socket_fd, 413, "413 Payload Too Large"));
 	}
 	else if (bufstr.size() != expected_size)
-		return (send_error(socket_fd, "412 Precondition Failed"));
+		return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
 	std::string content("HTTP/1.1 200 OK\n");
 	send(socket_fd, content.c_str(), content.size(), 0);
@@ -129,12 +140,12 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		std::string line;
 		size_t index = bufstr.find("Content-Length: ");
 		if (index == std::string::npos)
-			return (send_error(socket_fd, "411 Length Required"));
+			return (send_error(socket_fd, 411, "411 Length Required"));
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
 		if (iss.fail())
-			return (send_error(socket_fd, "412 Precondition Failed"));
+			return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
 		std::string file_abs_path = this->_root;
 
@@ -166,6 +177,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			send(socket_fd, content.c_str(), content.size(), 0);
 			recv(socket_fd, buffer, 30000, 0);
 			receive_put_content(socket_fd, buffer, outdata, expected_size);
+			outdata.close();
 		}
 		else
 		{
@@ -177,7 +189,9 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			recv(socket_fd, buffer, 30000, 0);
 			std::cout << "entering here too" << std::endl;
 			receive_put_content(socket_fd, buffer, outdata, expected_size);
+			outdata.close();
 		}
+		indata.close();
 	}
 }
 
@@ -304,6 +318,11 @@ void Server::compare_block_info(std::string line)
 		std::string value = line.substr(index, line.size() - index - 1 - (line[line.size() - 2] == ' '));
 		if (value.find(' ') != std::string::npos)
 			throw Webserv::InvalidFileContentException();
+		std::string file_abs_path = this->_root + value;
+		std::ifstream newdata(file_abs_path);
+		if (!newdata.is_open())
+			throw Webserv::InvalidFileContentException();
+		newdata.close();
 		std::list<int>::iterator it = toints.begin();
 		std::list<int>::iterator ite = toints.end();
 		for (; it != ite; it++)
@@ -315,8 +334,16 @@ void Server::check_set_default(void)
 {
 	if (this->_index_files.empty() || this->_ports.empty() || this->_root.empty())
 		throw Server::IncompleteServerException();
-	std::string err404("error_files/404.html");
-	this->_error_map.insert(std::pair<int,std::string>(404, err404));
+	if (this->_error_map.find(404) == this->_error_map.end())
+	{
+		std::string err404("error_files/404.html");
+		std::string file_abs_path = this->_root + err404;
+		std::ifstream newdata(file_abs_path);
+		if (!newdata.is_open())
+			throw Webserv::MissingDefault404Exception();
+		newdata.close();
+		this->_error_map.insert(std::pair<int,std::string>(404, err404));
+	}
 	if (this->_server_type.empty())
 		this->_server_type = "default_server";
 }
@@ -364,67 +391,95 @@ void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)
 
 void Server::setup_server(void)
 {
-	// struct pollfd pfds[this->_ports.size()]; //to be this->_servers.size()
+	struct pollfd pfds[this->_ports.size()];
+	struct sockaddr_in address[this->_ports.size()];
 
 	std::list<int>::iterator it = this->_ports.begin();
 	std::list<int>::iterator ite = this->_ports.end();
 	
-	pid_t pid;
+	int index = 0;
 	for (; it != ite; it++)
 	{
 		std::cout << "Setting up port " << *it << '.' << std::endl;
-		if ((pid = fork()) == -1)
+
+		if ((pfds[index].fd = socket(PF_INET, SOCK_STREAM, 0)) == 0)
 		{
-			perror("fork");
+			perror("socket");
 			return ;
 		}
-		if (!pid)
+		pfds[index].events = POLLIN;
+
+		address[index].sin_family = PF_INET;
+		address[index].sin_addr.s_addr = INADDR_ANY;
+		address[index].sin_port = htons(*it);
+
+		if (bind(pfds[index].fd, (struct sockaddr *) &address[index], sizeof(address[index])) < 0)
 		{
-			int server_fd, new_socket;
-			ssize_t valread;
-			struct sockaddr_in address;
-			int addrlen = sizeof(address);
+			perror("bind");
+			return ;
+		}
 
+		if (listen(pfds[index].fd, 10) < 0)
+		{
+			perror("listen");
+			return ;
+		}
+		++index;
+	}
 
-			if ((server_fd = socket(PF_INET, SOCK_STREAM, 0)) == 0)
-			{
-				perror("socket");
-				return ;
-			}
+	int new_socket, ready;
+	size_t addrlen;
+	ssize_t valread;
 
-			address.sin_family = PF_INET;
-			address.sin_addr.s_addr = INADDR_ANY;
-			address.sin_port = htons(*it);
+	while(1)
+	{
+		std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
+		ready = poll(pfds, this->_ports.size(), -1);
+		if (ready == -1)
+		{
+			perror("poll");
+			return ;
+		}
 
-			if (bind(server_fd, (struct sockaddr *) &address, sizeof(address)) < 0)
-			{
-				perror("bind");
-				return ;
-			}
-		
-			if (listen(server_fd, 10) < 0)
-			{
-				perror("listen");
-				return ;
-			}
+		std::cout << ready << "socket(s) ready" << std::endl;
 
-			while(1)
-			{
-				std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
-				if ((new_socket = accept(server_fd, (struct sockaddr *) &address, (socklen_t*) &addrlen)) < 0)
+		for (size_t index = 0; index < this->_ports.size(); index++) {
+
+			if (pfds[index].revents != 0) {
+				std::cout << "  socket = " << pfds[index].fd << "; events: ";
+				(pfds[index].revents & POLLIN)  ? std::cout << "POLLIN "  : std::cout << "";
+				(pfds[index].revents & POLLHUP) ? std::cout << "POLLHUP " : std::cout << "";
+				(pfds[index].revents & POLLERR) ? std::cout << "POLLERR " : std::cout << "";
+				std::cout << std::endl;
+
+				addrlen = sizeof(address[index]);
+				if ((new_socket = accept(pfds[index].fd, (struct sockaddr *) &address[index], (socklen_t*) &addrlen)) < 0)
 				{
 					perror("accept");
 					return ;
 				}
-				std::cout << "socket value " << new_socket << std::endl;
 
 				char buffer[30000] = {0};
 				valread = recv(new_socket, buffer, 30000, 0);
 				analyse_request(new_socket, buffer);
 				std::cout << "------------------content message sent to " << new_socket << "-------------------\n";
 				close(new_socket);
+	
+				// if (pfds[j].revents & POLLIN) {
+				// 	ssize_t s = read(pfds[j].fd, buf, sizeof(buf));
+				// 	if (s == -1)
+				// 		errExit("read");
+				// 	printf("    read %zd bytes: %.*s\n",
+				// 			s, (int) s, buf);
+				// } else {                /* POLLERR | POLLHUP */
+				// 	printf("    closing fd %d\n", pfds[j].fd);
+				// 	if (close(pfds[j].fd) == -1)
+				// 		errExit("close");
+				// 	num_open_fds--;
+				// }
 			}
 		}
+
 	}
 }
 

@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/24 15:00:34 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/24 16:33:17 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 # include <exception>
 # include <iostream>
 # include <sys/wait.h>
+# include <poll.h>
 
 class Server {
 	private:
@@ -33,7 +34,8 @@ class Server {
 
 		void analyse_request(int socket_fd, char buffer[30000]);
 		void receive_put_content(int socket_fd, char buffer[30000], std::ofstream &outfile, size_t expected_size);
-	
+		void send_error(int socket_fd, int err_code, std::string errstr);
+
 	public:
 		Server(void);
 		~Server(void);
