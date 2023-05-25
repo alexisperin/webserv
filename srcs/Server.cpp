@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 17:09:34 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/25 18:18:41 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,11 +66,13 @@ void Server::send_error(int socket_fd, int err_code, std::string errstr)
 	send(socket_fd, content.c_str(), content.size(), 0);
 }
 
-std::string Server::get_root_from_locations(std::string & loc, int head_offset, std::string method)
+std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method)
 {
-	std::string substr_loc = loc.substr(4 + head_offset, loc.find(" ", 4 + head_offset) - (4 + head_offset));
+	std::string ret;
+	std::string substr_loc = loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
 	size_t match_size = 0;
 	size_t match_index;
+	std::string match_index_file;
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
 		size_t loc_size = this->_locations[loc_index]->_location.size();
@@ -82,14 +84,30 @@ std::string Server::get_root_from_locations(std::string & loc, int head_offset, 
 				{
 					match_size = loc_size;
 					match_index = loc_index;
+					match_index_file = this->_locations[loc_index]->_index_files.front();
 				}
 			}
 		}
 	}
 	if (!match_size)
-		return (this->_root);
-	loc = loc.substr(0, 4 + head_offset) + loc.substr(4 + head_offset + match_size);
-	return (this->_locations[match_index]->_root);
+		ret = this->_root;
+	else
+		ret = this->_locations[match_index]->_root;
+	loc = loc.substr(0, 4 + method_offset) + loc.substr(4 + method_offset + match_size);
+	std::cout << "loc after: " << loc << std::endl;
+
+	if (!loc.compare(4 + method_offset, 2, "/ ") || !loc.compare(4 + method_offset, 1, " "))
+	{
+		if (match_index_file.empty())
+			ret += this->_index_files.front();
+		else
+			ret += match_index_file;
+	}
+	else if (!loc.compare(4 + method_offset, 1, "/"))
+		ret += loc.substr(5 + method_offset, loc.find(" ", 5 + method_offset) - (5 + method_offset));
+	else
+		ret += loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
+	return (ret);
 }
 
 void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstream &outfile, size_t expected_size)
@@ -123,21 +141,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 	{
 		int head_offset = !bufstr.compare(0, 5, "HEAD ");
 		std::cout << "GET DETECTED" << std::endl;
-		std::string file_abs_path = get_root_from_locations(bufstr, head_offset, "GET");
-
-		if (!bufstr.compare(4 + head_offset, 2, "/ "))
-		{
-			file_abs_path += this->_index_files.front();
-		}
-		else if (!bufstr.compare(4 + head_offset, 1, "/"))
-		{
-			file_abs_path += bufstr.substr(5 + head_offset, bufstr.find(" ", 5 + head_offset) - (5 + head_offset));
-		}
-		else
-		{
-			std::cerr << "TODO ?" << std::endl;
-			return ;
-		}
+		std::string file_abs_path = get_path_from_locations(bufstr, head_offset, "GET");
 
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
 		std::ifstream indata(file_abs_path);
@@ -180,22 +184,11 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		if (iss.fail() || expected_size > this->_body_size * 1000000)
 			return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
-		std::string file_abs_path = this->_root;
-
-		if (!bufstr.compare(4 + post_offset, 2, "/ "))
-		{
-			std::cerr << "Time to do some research boys, PUT / DOES exist." << std::endl;
-			return ;
-		}
-		else if (!bufstr.compare(4 + post_offset, 1, "/"))
-		{
-			file_abs_path += bufstr.substr(5 + post_offset, bufstr.find(' ', 5 + post_offset) - (5 + post_offset));
-		}
+		std::string file_abs_path;
+		if (!post_offset)
+			file_abs_path = get_path_from_locations(bufstr, 0, "PUT");
 		else
-		{
-			std::cerr << "Time to do some research boys, PUT not/ DOES exist." << std::endl;
-			return ;
-		}
+			file_abs_path = get_path_from_locations(bufstr, 1, "POST");
 
 		std::cout << "checking if file: |" << file_abs_path << "| exists" << std::endl;
 		std::ifstream indata(file_abs_path);
@@ -225,7 +218,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		}
 		indata.close();
 	}
-	else if (!bufstr.compare(0, 7, "DELETE "))
+	else if (!bufstr.compare(0, 7, "DELETE ")) //get_path_from_locations expected here somewhere
 	{
 		std::cout << "DELETE DETECTED" << std::endl;
 		std::string file_abs_path = this->_root;
@@ -266,11 +259,11 @@ void Server::compare_block_info(std::string line, std::ifstream & indata)
 {
 	std::cout << "line: " << line << std::endl;
 	if (!line.compare (0, 9, "location "))
-		this->_locations.push_back(new Location(line, indata));
-	else if (line.back() != ';' || line.find(';') != line.size() - 1)
-		throw Webserv::InvalidFileContentException();
+		this->_locations.push_back(new Location(line, indata, this->_root));
 	else if (line[0] == '#')
 		;
+	else if (line.back() != ';' || line.find(';') != line.size() - 1)
+		throw Webserv::InvalidFileContentException();
 	else if (!line.compare(0, 7, "listen "))
 	{
 		std::istringstream iss(line.substr(7));

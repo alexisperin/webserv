@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 16:13:37 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/25 17:45:28 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,7 +41,7 @@ class Server
 		void analyse_request(int socket_fd, char buffer[30000]);
 		void receive_put_content(int socket_fd, char buffer[30000], std::ofstream &outfile, size_t expected_size);
 		void send_error(int socket_fd, int err_code, std::string errstr);
-		std::string get_root_from_locations(std::string & loc, int head_offset, std::string method);
+		std::string get_path_from_locations(std::string & loc, int head_offset, std::string method);
 
 	public:
 		Server(void);

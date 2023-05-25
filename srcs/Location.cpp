@@ -6,15 +6,17 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:12:38 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 15:49:34 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/25 18:18:30 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-Location::Location(std::string line, std::ifstream & indata) : _auto_index(true), _auto_sighted(false),
-	_line_sighted(false), _return_sighted(false)
+Location::Location(std::string line, std::ifstream & indata, std::string root) : _auto_index(true), _auto_sighted(false),
+	_line_sighted(false), _return_sighted(false), _root(root)
 {
+	if (root.empty())
+		throw Webserv::InvalidFileContentException();
 	size_t index = line.find(' ', 9);
 	if (line.compare(index + 1, 2, "{"))
 		throw Webserv::InvalidFileContentException();
@@ -67,10 +69,10 @@ Location &Location::operator=(const Location & other)
 void Location::compare_block_info(std::string line)
 {
 	std::cout << "line: " << line << std::endl;
-	if (line.back() != ';' || line.find(';') != line.size() - 1)
-		throw Webserv::InvalidFileContentException();
 	if (line[0] == '#')
 		;
+	else if (line.back() != ';' || line.find(';') != line.size() - 1)
+		throw Webserv::InvalidFileContentException();
 	else if (!line.compare(0, 5, "root "))
 	{
 		this->_root = line.substr(5, line.size() - 6 - (line[line.size() - 2] == ' '));
@@ -162,8 +164,6 @@ void Location::check_set_default(void)
 			&& this->_methods[index] != "DELETE" && this->_methods[index] != "HEAD")
 			throw Webserv::InvalidFileContentException();
 	}
-	if (this->_return == this->_location)
-		throw Webserv::InvalidFileContentException();
 	if (this->_methods.empty())
 	{
 		this->_methods.push_back("GET");
