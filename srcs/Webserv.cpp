@@ -6,36 +6,11 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/24 16:38:27 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/25 13:42:26 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
-
-static std::string	trim_spaces(std::string str)
-{
-	int index = 0;
-	std::string new_string;
-	while (str[index] == ' ' || str[index] == '\t')
-		++index;
-	while (str[index])
-	{
-		if (str[index] == '\t')
-			new_string += ' ';
-		else
-			new_string += str[index];
-		if (str[index] == ' ' || str[index] == '\t')
-		{
-			while (str[index] == ' ' || str[index] == '\t')
-				++index;
-			--index;
-		}
-		++index;
-	}
-	if (new_string.back() == ' ')
-		new_string.pop_back();
-	return (new_string);
-}
 
 Webserv::Webserv(std::string file_name)
 {
@@ -70,11 +45,13 @@ Webserv::Webserv(std::string file_name)
 					this->_servers.back()->check_set_default();
 				}
 				else
-					this->_servers.back()->compare_block_info(line);
+					this->_servers.back()->compare_block_info(line, indata);
 			}
 		}
 	}
 	indata.close();
+	if (in_server_block)
+		throw Webserv::InvalidFileContentException();
 	std::set<int> all_ports;
 	size_t number_of_ports = 0;
 

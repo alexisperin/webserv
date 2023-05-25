@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 11:26:28 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/25 17:09:34 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "Webserv.hpp"
 
-Server::Server(void) : _body_size(1)
+Server::Server(void) : _body_size(1), _body_sighted(false)
 {
 }
 
@@ -23,6 +23,11 @@ Server::~Server(void)
 	this->_server_names.clear();
 	this->_index_files.clear();
 	this->_error_map.clear();
+	std::vector<Location *>::iterator it = this->_locations.begin();
+	std::vector<Location *>::iterator ite = this->_locations.end();
+	for (; it != ite; it++)
+		delete *it;
+	this->_locations.clear();
 }
 
 // ************************************************************************** //
@@ -45,6 +50,7 @@ static std::string read_data(std::ifstream &indata)
 
 void Server::send_error(int socket_fd, int err_code, std::string errstr)
 {
+	std::cerr << " -- status return " << errstr << " --" << std::endl;
 	std::string content = "HTTP/1.1 " + errstr + '\n';
 	if (this->_error_map.find(err_code) != this->_error_map.end())
 	{
@@ -58,6 +64,32 @@ void Server::send_error(int socket_fd, int err_code, std::string errstr)
 		content += std::to_string(file_content.size()) + "\n\n" + file_content;
 	}
 	send(socket_fd, content.c_str(), content.size(), 0);
+}
+
+std::string Server::get_root_from_locations(std::string & loc, int head_offset, std::string method)
+{
+	std::string substr_loc = loc.substr(4 + head_offset, loc.find(" ", 4 + head_offset) - (4 + head_offset));
+	size_t match_size = 0;
+	size_t match_index;
+	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
+	{
+		size_t loc_size = this->_locations[loc_index]->_location.size();
+		if (!substr_loc.compare(0, loc_size, this->_locations[loc_index]->_location))
+		{
+			if (std::find(this->_locations[loc_index]->_methods.begin(), this->_locations[loc_index]->_methods.end(), method) != this->_locations[loc_index]->_methods.end())
+			{
+				if (!match_size || loc_size > match_size)
+				{
+					match_size = loc_size;
+					match_index = loc_index;
+				}
+			}
+		}
+	}
+	if (!match_size)
+		return (this->_root);
+	loc = loc.substr(0, 4 + head_offset) + loc.substr(4 + head_offset + match_size);
+	return (this->_locations[match_index]->_root);
 }
 
 void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstream &outfile, size_t expected_size)
@@ -91,7 +123,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 	{
 		int head_offset = !bufstr.compare(0, 5, "HEAD ");
 		std::cout << "GET DETECTED" << std::endl;
-		std::string file_abs_path = this->_root;
+		std::string file_abs_path = get_root_from_locations(bufstr, head_offset, "GET");
 
 		if (!bufstr.compare(4 + head_offset, 2, "/ "))
 		{
@@ -99,11 +131,12 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		}
 		else if (!bufstr.compare(4 + head_offset, 1, "/"))
 		{
-			file_abs_path += bufstr.substr(5, bufstr.find(" ", 5 + head_offset) - (5 + head_offset));
+			file_abs_path += bufstr.substr(5 + head_offset, bufstr.find(" ", 5 + head_offset) - (5 + head_offset));
 		}
 		else
 		{
-			file_abs_path += "404.html";
+			std::cerr << "TODO ?" << std::endl;
+			return ;
 		}
 
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
@@ -156,7 +189,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		}
 		else if (!bufstr.compare(4 + post_offset, 1, "/"))
 		{
-			file_abs_path += bufstr.substr(5 + post_offset, bufstr.find(" ", 5 + post_offset) - (5 + post_offset));
+			file_abs_path += bufstr.substr(5 + post_offset, bufstr.find(' ', 5 + post_offset) - (5 + post_offset));
 		}
 		else
 		{
@@ -202,7 +235,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		{
 			file_abs_path += bufstr.substr(8, bufstr.find(" ", 8) - 8);
 			std::cout << "Wants to delete file " << file_abs_path << std::endl;
-			if (std::remove(file_abs_path.c_str()) == 0)
+			if (!std::remove(file_abs_path.c_str()))
 			{
 				std::cout << "File deleted\n";
 				content = "HTTP/1.1 204 No Content\n";
@@ -229,12 +262,16 @@ static int is_error_code(int code)
 		|| (code >= 500 && code <= 508) || (code >= 510 && code <= 511));
 }
 
-void Server::compare_block_info(std::string line)
+void Server::compare_block_info(std::string line, std::ifstream & indata)
 {
 	std::cout << "line: " << line << std::endl;
-	if (line.back() != ';' || line.find(';') != line.size() - 1)
+	if (!line.compare (0, 9, "location "))
+		this->_locations.push_back(new Location(line, indata));
+	else if (line.back() != ';' || line.find(';') != line.size() - 1)
 		throw Webserv::InvalidFileContentException();
-	if (!line.compare(0, 7, "listen "))
+	else if (line[0] == '#')
+		;
+	else if (!line.compare(0, 7, "listen "))
 	{
 		std::istringstream iss(line.substr(7));
 		int toint;
@@ -300,9 +337,17 @@ void Server::compare_block_info(std::string line)
 		}
 	}
 	else if (!line.compare("client_max_body_size 0;") || !line.compare("client_max_body_size 0 ;"))
+	{
+		if (this->_body_sighted)
+			throw Webserv::InvalidFileContentException();
+		this->_body_sighted = true;
 		this->_body_size = 0;
+	}
 	else if (!line.compare(0, 21, "client_max_body_size "))
 	{
+		if (this->_body_sighted)
+			throw Webserv::InvalidFileContentException();
+		this->_body_sighted = true;
 		std::istringstream iss(line.substr(21));
 		int toint;
 		iss >> toint;
@@ -370,6 +415,24 @@ void Server::check_set_default(void)
 	}
 	if (this->_server_type.empty())
 		this->_server_type = "default_server";
+	for (size_t index = 0; index < this->_locations.size(); index ++)
+	{
+		for (size_t sub_index = 0; sub_index < index; sub_index++)
+		{
+			if (this->_locations[index]->_location == this->_locations[sub_index]->_location)
+				throw Webserv::InvalidFileContentException();
+		}
+		if (!this->_locations[index]->_return.empty())
+		{
+			for (size_t loc_index = 0; loc_index < index; loc_index++)
+			{
+				if (this->_locations[loc_index]->_location == this->_locations[index]->_return)
+					*this->_locations[index] = *this->_locations[loc_index];
+			}
+			if (!this->_locations[index]->_return.empty())
+				throw Webserv::InvalidFileContentException();
+		}
+	}
 }
 
 void Server::display_serv_content(void)
@@ -402,6 +465,10 @@ void Server::display_serv_content(void)
 	for (; iiit != iiite; iiit++)
 		std::cout << iiit->first << ' ' << iiit->second << ' ';
 	std::cout << std::endl;
+	std::vector<Location *>::iterator iiiit = this->_locations.begin();
+	std::vector<Location *>::iterator iiiite = this->_locations.end();
+	for (; iiiit != iiiite; iiiit++)
+		(*iiiit)->display_loc_content();
 }
 
 void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)

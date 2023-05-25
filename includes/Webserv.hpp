@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:12:47 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/24 16:37:56 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/25 14:51:44 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,8 @@
 # include <netinet/in.h>
 
 # include "Server.hpp"
+class Server;
+# include "utils.hpp"
 
 class Webserv
 {

@@ -14,3 +14,6 @@ Using curl we can reproduce http methods:
 
 
 ~/Documents not working in .conf file
+
+https://www.digitalocean.com/community/tutorials/nginx-location-directive
+Basicly the url above tells us we still have a lot to do for the locations

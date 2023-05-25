@@ -6,7 +6,7 @@
 #    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/05/23 15:17:33 by yhuberla         ###   ########.fr        #
+#    Updated: 2023/05/25 13:39:31 by yhuberla         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,7 @@ SRCS_DIR	= srcs
 OBJSDIR		= objs
 INCDIR		= includes
 
-SRC_FILE	= main Webserv Server
+SRC_FILE	= main utils Webserv Server Location
 
 SRCS		= $(addprefix ${SRCS_DIR}/, $(addsuffix .cpp, ${SRC_FILE}))
 OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILE})))
