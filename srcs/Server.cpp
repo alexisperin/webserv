@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/24 18:15:12 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/25 11:26:28 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,6 +84,7 @@ void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstrea
 void Server::analyse_request(int socket_fd, char buffer[30000])
 {
 	std::string bufstr(buffer);
+	std::string content;
 	std::cout << bufstr << std::endl;
 
 	if (!bufstr.compare(0, 4, "GET ") || !bufstr.compare(0, 5, "HEAD "))
@@ -108,7 +109,6 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
 		std::ifstream indata(file_abs_path);
 		std::string file_content;
-		std::string content;
 		if (!indata.is_open())
 		{
 			content = ("HTTP/1.1 404 Not Found\nContent-Type:text/html\nContent-Length: ");
@@ -164,7 +164,6 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			return ;
 		}
 
-		std::string content;
 		std::cout << "checking if file: |" << file_abs_path << "| exists" << std::endl;
 		std::ifstream indata(file_abs_path);
 		if (!indata.is_open())
@@ -192,6 +191,31 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			outdata.close();
 		}
 		indata.close();
+	}
+	else if (!bufstr.compare(0, 7, "DELETE "))
+	{
+		std::cout << "DELETE DETECTED" << std::endl;
+		std::string file_abs_path = this->_root;
+		if (!bufstr.compare(7, 2, "/ "))
+			content = "HTTP/1.1 400 Bad Request\n"; // To discuss ???
+		else if (!bufstr.compare(7, 1, "/"))
+		{
+			file_abs_path += bufstr.substr(8, bufstr.find(" ", 8) - 8);
+			std::cout << "Wants to delete file " << file_abs_path << std::endl;
+			if (std::remove(file_abs_path.c_str()) == 0)
+			{
+				std::cout << "File deleted\n";
+				content = "HTTP/1.1 204 No Content\n";
+			}
+			else
+			{
+				std::cout << "File could not be deleted\n";
+				content = "HTTP/1.1 404 Not Found\n";
+			}
+		}
+		else
+			content = "HTTP/1.1 400 Bad Request\n"; // To discuss ???
+		send(socket_fd, content.c_str(), content.size(), 0);
 	}
 }
 
