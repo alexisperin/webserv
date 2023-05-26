@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 18:18:41 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/26 17:54:49 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,20 +33,6 @@ Server::~Server(void)
 // ************************************************************************** //
 //                                  Private                                   //
 // ************************************************************************** //
-
-static std::string read_data(std::ifstream &indata)
-{
-	std::string res;
-	std::string line;
-	while (!indata.eof()) {
-		std::getline( indata, line );
-		res += line;
-		if (!indata.eof())
-			res += '\n';
-	}
-	indata.close();
-	return (res);
-}
 
 void Server::send_error(int socket_fd, int err_code, std::string errstr)
 {
@@ -94,7 +80,7 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	else
 		ret = this->_locations[match_index]->_root;
 	loc = loc.substr(0, 4 + method_offset) + loc.substr(4 + method_offset + match_size);
-	std::cout << "loc after: " << loc << std::endl;
+	// std::cout << "loc after: " << loc << std::endl;
 
 	if (!loc.compare(4 + method_offset, 2, "/ ") || !loc.compare(4 + method_offset, 1, " "))
 	{
@@ -115,17 +101,16 @@ void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstrea
 	std::string bufstr(buffer);
 	std::cout << "bufstr size: " << bufstr.size() << std::endl;
 	// std::cout << bufstr << std::endl;
-	outfile << bufstr;
 
 	if (bufstr.size() > this->_body_size * 1000000)
 	{
 		std::cerr << "file size exceeds max_body_size of " << this->_body_size << "MB" << std::endl;
-
 		return (send_error(socket_fd, 413, "413 Payload Too Large"));
 	}
 	else if (bufstr.size() != expected_size)
 		return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
+	outfile << bufstr;
 	std::string content("HTTP/1.1 200 OK\n");
 	send(socket_fd, content.c_str(), content.size(), 0);
 	std::cout << "response sent to " << socket_fd << ": " << content << std::endl;
@@ -136,7 +121,12 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 	std::string bufstr(buffer);
 	std::string content;
 	std::cout << bufstr << std::endl;
+	// display_special_characters(bufstr); //used for debug because /r present in buffer
 
+	if (check_http_version(bufstr))
+		return (send_error(socket_fd, 505, "505 HTTP Version Not Supported"));
+	if (check_correct_host(bufstr) || check_header_names(bufstr))
+		return (send_error(socket_fd, 400, "400 Bad Request"));
 	if (!bufstr.compare(0, 4, "GET ") || !bufstr.compare(0, 5, "HEAD "))
 	{
 		int head_offset = !bufstr.compare(0, 5, "HEAD ");
@@ -200,11 +190,14 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		{
 			std::ofstream outdata(file_abs_path, std::ofstream::trunc);
 			send(socket_fd, content.c_str(), content.size(), 0);
-			recv(socket_fd, buffer, 30000, 0);
-			receive_put_content(socket_fd, buffer, outdata, expected_size);
+			if (expected_size)
+			{
+				recv(socket_fd, buffer, 30000, 0);
+				receive_put_content(socket_fd, buffer, outdata, expected_size);
+			}
 			outdata.close();
 		}
-		else
+		else // post should use cgi_script
 		{
 			std::cout << "entering here" << std::endl;
 			std::ofstream outdata(file_abs_path);
@@ -223,7 +216,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		std::cout << "DELETE DETECTED" << std::endl;
 		std::string file_abs_path = this->_root;
 		if (!bufstr.compare(7, 2, "/ "))
-			content = "HTTP/1.1 400 Bad Request\n"; // To discuss ???
+			content = "HTTP/1.1 400 Bad Request\n"; // To discuss ??? -> I think we delete the default file given in index
 		else if (!bufstr.compare(7, 1, "/"))
 		{
 			file_abs_path += bufstr.substr(8, bufstr.find(" ", 8) - 8);
@@ -248,12 +241,6 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 // ************************************************************************** //
 //                                  Public                                    //
 // ************************************************************************** //
-
-static int is_error_code(int code)
-{
-	return ((code >= 400 && code <= 418) || (code >= 421 && code <= 426) || (code >= 428 && code <= 431) || code == 451
-		|| (code >= 500 && code <= 508) || (code >= 510 && code <= 511));
-}
 
 void Server::compare_block_info(std::string line, std::ifstream & indata)
 {

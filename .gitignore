@@ -3,6 +3,7 @@ objs
 cgi_tester
 tester
 YoupiBanane
+webserv_tester
 .DS_Store
 .vscode
 *.o
