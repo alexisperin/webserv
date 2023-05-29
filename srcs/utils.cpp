@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.s19.be>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/26 18:09:25 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/29 11:52:19 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,8 @@ std::string	trim_spaces(std::string str)
 		}
 		++index;
 	}
-	if (new_string.back() == ' ')
-		new_string.pop_back();
+	if (new_string[new_string.size() - 1] == ' ')
+		new_string = new_string.substr(0, new_string.size() - 1);
 	return (new_string);
 }
 
@@ -42,7 +42,7 @@ std::string read_data(std::ifstream &indata)
 	std::string res;
 	std::string line;
 	while (!indata.eof()) {
-		std::getline( indata, line );
+		std::getline(indata, line);
 		res += line;
 		if (!indata.eof())
 			res += '\n';

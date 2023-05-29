@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.s19.be>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:12:38 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 18:18:30 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/29 11:54:33 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,7 +71,7 @@ void Location::compare_block_info(std::string line)
 	std::cout << "line: " << line << std::endl;
 	if (line[0] == '#')
 		;
-	else if (line.back() != ';' || line.find(';') != line.size() - 1)
+	else if (line[line.size() - 1] != ';' || line.find(';') != line.size() - 1)
 		throw Webserv::InvalidFileContentException();
 	else if (!line.compare(0, 5, "root "))
 	{

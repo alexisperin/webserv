@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.s19.be>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/26 17:54:49 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/29 11:53:59 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,13 +41,15 @@ void Server::send_error(int socket_fd, int err_code, std::string errstr)
 	if (this->_error_map.find(err_code) != this->_error_map.end())
 	{
 		std::string file_abs_path = this->_root + this->_error_map[err_code];
-		std::ifstream newdata(file_abs_path);
+		std::ifstream newdata(file_abs_path.c_str());
 		if (!newdata.is_open())
 			throw Webserv::InvalidFileException();
 		std::string file_content = read_data(newdata);
+		std::ostringstream content_length;
 
+		content_length << file_content.size();
 		content += "Content-Type:text/html\nContent-Length: ";
-		content += std::to_string(file_content.size()) + "\n\n" + file_content;
+		content += content_length.str() + "\n\n" + file_content;
 	}
 	send(socket_fd, content.c_str(), content.size(), 0);
 }
@@ -134,14 +136,14 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		std::string file_abs_path = get_path_from_locations(bufstr, head_offset, "GET");
 
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
-		std::ifstream indata(file_abs_path);
+		std::ifstream indata(file_abs_path.c_str());
 		std::string file_content;
 		if (!indata.is_open())
 		{
 			content = ("HTTP/1.1 404 Not Found\nContent-Type:text/html\nContent-Length: ");
 			file_abs_path = this->_root + this->_error_map[404];
 			std::cout << "Error occured, now reading from file: |" << file_abs_path << '|' << std::endl;
-			std::ifstream newdata(file_abs_path);
+			std::ifstream newdata(file_abs_path.c_str());
 			if (!newdata.is_open())
 				throw Webserv::InvalidFileException();
 			file_content = read_data(newdata);
@@ -151,8 +153,10 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			content = ("HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ");
 			file_content = read_data(indata);
 		}
-	
-		content += std::to_string(file_content.size()) + "\n\n" + file_content;
+
+		std::ostringstream content_length;
+		content_length << file_content.size();
+		content += content_length.str() + "\n\n" + file_content;
 		send(socket_fd, content.c_str(), content.size(), 0);
 	}
 	else if (!bufstr.compare(0, 4, "PUT ") || !bufstr.compare(0, 5, "POST "))
@@ -181,14 +185,14 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			file_abs_path = get_path_from_locations(bufstr, 1, "POST");
 
 		std::cout << "checking if file: |" << file_abs_path << "| exists" << std::endl;
-		std::ifstream indata(file_abs_path);
+		std::ifstream indata(file_abs_path.c_str());
 		if (!indata.is_open())
 			content = "HTTP/1.1 201 Created\n";
 		else
 			content = "HTTP/1.1 100 Continue\n";
 		if (!post_offset)
 		{
-			std::ofstream outdata(file_abs_path, std::ofstream::trunc);
+			std::ofstream outdata(file_abs_path.c_str(), std::ofstream::trunc);
 			send(socket_fd, content.c_str(), content.size(), 0);
 			if (expected_size)
 			{
@@ -200,7 +204,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		else // post should use cgi_script
 		{
 			std::cout << "entering here" << std::endl;
-			std::ofstream outdata(file_abs_path);
+			std::ofstream outdata(file_abs_path.c_str());
 			send(socket_fd, content.c_str(), content.size(), 0);
 			if (post_offset)
 				return ;
@@ -249,7 +253,7 @@ void Server::compare_block_info(std::string line, std::ifstream & indata)
 		this->_locations.push_back(new Location(line, indata, this->_root));
 	else if (line[0] == '#')
 		;
-	else if (line.back() != ';' || line.find(';') != line.size() - 1)
+	else if (line[line.size() - 1] != ';' || line.find(';') != line.size() - 1)
 		throw Webserv::InvalidFileContentException();
 	else if (!line.compare(0, 7, "listen "))
 	{
@@ -368,7 +372,7 @@ void Server::compare_block_info(std::string line, std::ifstream & indata)
 		if (value.find(' ') != std::string::npos)
 			throw Webserv::InvalidFileContentException();
 		std::string file_abs_path = this->_root + value;
-		std::ifstream newdata(file_abs_path);
+		std::ifstream newdata(file_abs_path.c_str());
 		if (!newdata.is_open())
 			throw Webserv::InvalidFileContentException();
 		newdata.close();
@@ -387,7 +391,7 @@ void Server::check_set_default(void)
 	{
 		std::string err404("error_files/404.html");
 		std::string file_abs_path = this->_root + err404;
-		std::ifstream newdata(file_abs_path);
+		std::ifstream newdata(file_abs_path.c_str());
 		if (!newdata.is_open())
 			throw Webserv::MissingDefault404Exception();
 		newdata.close();
@@ -533,6 +537,11 @@ void Server::setup_server(void)
 
 				char buffer[30000] = {0};
 				valread = recv(new_socket, buffer, 30000, 0);
+				if (valread == -1)
+				{
+					perror("recv");
+					return ;
+				}
 				analyse_request(new_socket, buffer);
 				std::cout << "------------------content message sent to " << new_socket << "-------------------\n";
 				close(new_socket);
