@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 15:24:31 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 18:40:30 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,4 +140,36 @@ void display_special_characters(std::string str)
 		}
 	}
 	std::cout << "EOF" << std::endl;
+}
+
+void run_script(int socket_fd, std::string body)
+{
+	(void)socket_fd;
+	pid_t pid = fork();
+	if (pid == -1)
+		throw Webserv::SystemCallException();
+	if (!pid)
+	{
+		char **args = new char *[3];
+		args[0] = new char[7];
+		strcpy(args[0], "cgi.py");
+		args[1] = new char[body.size() + 1];
+		strcpy(args[1], body.c_str());
+		args[2] = NULL;
+		// args[0] = new char[7];
+		// args[0] = ("cgi.py");
+		// args[1] = "3";
+		// args[2] = body.c_str();
+		// args[3] = NULL;
+		execve("cgi.py", args, NULL);
+		perror("exec");
+		std::cerr << "execve failure args = ";
+		for (int index = 0; index < 2; index++)
+		{
+			std::cerr << args[index] << ", ";
+		}
+		std::cerr << std::endl;
+		exit(1);
+	}
+	waitpid(pid, NULL, 0);
 }

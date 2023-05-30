@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 15:42:22 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 17:07:58 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -233,7 +233,8 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		std::string line;
 		size_t index = bufstr.find("Content-Length: ");
 		if (index == std::string::npos)
-			return (send_error(socket_fd, 204, "204 No Content"));
+			return (send_error(socket_fd, 201, "201 Created"));
+			// return (send_error(socket_fd, 411, "411 Length Required"));
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
@@ -265,6 +266,7 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		}
 		else // post should use cgi_script
 		{
+			run_script(socket_fd, "body=body");
 			// std::cout << "entering here" << std::endl;
 			// std::ofstream outdata(file_abs_path.c_str());
 			// send(socket_fd, content.c_str(), content.size(), 0);

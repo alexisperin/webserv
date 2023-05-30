@@ -31,3 +31,6 @@ Not allowed in C++98:
 cgi_env:
  -REQUEST_METHOD="GET" (ex)
  -SERVER_PROTOCOL="HTTP/1.1"
+ -PATH_INFO=
+
+ execve is for executables, not python scripts
