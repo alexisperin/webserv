@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 18:40:30 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 19:24:39 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,17 +151,12 @@ void run_script(int socket_fd, std::string body)
 	if (!pid)
 	{
 		char **args = new char *[3];
-		args[0] = new char[7];
-		strcpy(args[0], "cgi.py");
+		args[0] = new char[11];
+		strcpy(args[0], "cgi_script"); // I guess we can't strcpy
 		args[1] = new char[body.size() + 1];
 		strcpy(args[1], body.c_str());
 		args[2] = NULL;
-		// args[0] = new char[7];
-		// args[0] = ("cgi.py");
-		// args[1] = "3";
-		// args[2] = body.c_str();
-		// args[3] = NULL;
-		execve("cgi.py", args, NULL);
+		execve("cgi_script", args, NULL);
 		perror("exec");
 		std::cerr << "execve failure args = ";
 		for (int index = 0; index < 2; index++)
@@ -172,4 +167,12 @@ void run_script(int socket_fd, std::string body)
 		exit(1);
 	}
 	waitpid(pid, NULL, 0);
+}
+
+std::string get_body(std::string bufstr)
+{
+	size_t index = bufstr.find("\r\n\r\n");
+	if (index == std::string::npos)
+		return ("");
+	return (bufstr.substr(index + 4));
 }

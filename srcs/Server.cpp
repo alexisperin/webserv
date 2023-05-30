@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 17:07:58 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 19:44:51 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -266,7 +266,10 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		}
 		else // post should use cgi_script
 		{
-			run_script(socket_fd, "body=body");
+			std::string body = get_body(bufstr);
+			run_script(socket_fd, body);
+			content = "GET / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n";
+			send(socket_fd, content.c_str(), content.size(), 0);
 			// std::cout << "entering here" << std::endl;
 			// std::ofstream outdata(file_abs_path.c_str());
 			// send(socket_fd, content.c_str(), content.size(), 0);

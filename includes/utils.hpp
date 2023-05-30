@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:38:43 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 17:11:55 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 19:24:55 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,5 +26,6 @@ int check_correct_host(std::string bufstr);
 int check_header_names(std::string bufstr);
 void display_special_characters(std::string str);
 void run_script(int socket_fd, std::string body);
+std::string get_body(std::string bufstr);
 
 #endif
