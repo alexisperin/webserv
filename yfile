@@ -26,3 +26,8 @@ Not allowed in C++98:
 	- string.pop_back()/pop_front()
 	- std::to_string()
 	- fstream(string) -> should use fstream(char *) instead
+
+
+cgi_env:
+ -REQUEST_METHOD="GET" (ex)
+ -SERVER_PROTOCOL="HTTP/1.1"

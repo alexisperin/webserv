@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.s19.be>             +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/29 11:52:19 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/30 15:24:31 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,8 @@ std::string	trim_spaces(std::string str)
 		}
 		++index;
 	}
-	if (new_string[new_string.size() - 1] == ' ')
-		new_string = new_string.substr(0, new_string.size() - 1);
+	if (new_string.back() == ' ')
+		new_string.pop_back();
 	return (new_string);
 }
 
@@ -42,7 +42,7 @@ std::string read_data(std::ifstream &indata)
 	std::string res;
 	std::string line;
 	while (!indata.eof()) {
-		std::getline(indata, line);
+		std::getline( indata, line );
 		res += line;
 		if (!indata.eof())
 			res += '\n';
@@ -107,21 +107,21 @@ void display_special_characters(std::string str)
 {
 	for (size_t index = 0; index < str.size(); ++index)
 	{
-		int c = str[index];
+		char c = str[index];
 
 		switch (c)
 		{
 			case '\\':
-				printf("\\\\");
+				std::cout << "\\";
 				break;
 			case '\n':
-				printf("\\n\n");
+				std::cout << "\\n\n";
 				break;
 			case '\r':
-				printf("\\r");
+				std::cout << "\\r";
 				break;
 			case '\t':
-				printf("\\t");
+				std::cout << "\\t";
 				break;
 
 			// TODO: Add other C character escapes here.  See:
@@ -130,13 +130,14 @@ void display_special_characters(std::string str)
 			default:
 				if (isprint(c))
 				{
-					putchar(c);
+					std::cout << c;
 				}
 				else
 				{
-					printf("\\x%X", c);
+					std::cout << '|' << c + '0' << '|';
 				}
 				break;
 		}
 	}
+	std::cout << "EOF" << std::endl;
 }

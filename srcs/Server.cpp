@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.s19.be>             +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/29 11:53:59 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/30 15:42:22 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ Server::Server(void) : _body_size(1), _body_sighted(false)
 
 Server::~Server(void)
 {
+	// std::cout << "Destructor of Server called." << std::endl;
 	this->_ports.clear();
 	this->_server_names.clear();
 	this->_index_files.clear();
@@ -51,7 +52,70 @@ void Server::send_error(int socket_fd, int err_code, std::string errstr)
 		content += "Content-Type:text/html\nContent-Length: ";
 		content += content_length.str() + "\n\n" + file_content;
 	}
+	else
+		content += '\n';
 	send(socket_fd, content.c_str(), content.size(), 0);
+}
+
+std::string Server::check_chunck_encoding(int socket_fd, std::string bufstr)
+{
+	if (bufstr.find("Transfer-Encoding: chunked") == std::string::npos)
+		return  (bufstr);
+	std::string sub_bufstr;
+	char buffer[30001] = {0};
+	// send_error(socket_fd, 100, "100 Continue");
+	ssize_t valread = recv(socket_fd, buffer, 30000, 0);
+	if (valread == -1)
+	{
+		close(socket_fd);
+		throw Webserv::SystemCallException();
+	}
+	while (valread && buffer[0] != '0')
+	{
+		bufstr += buffer;
+		display_special_characters(buffer);
+		// send_error(socket_fd, 100, "100 Continue");
+		valread = recv(socket_fd, buffer, 30000, 0);
+		if (valread == -1)
+		{
+			close(socket_fd);
+			throw Webserv::SystemCallException();
+		}
+		buffer[valread] = '\0';
+		std::cout << "first char of buffer: |" << buffer[0] << '|' << std::endl;
+	}
+	return (bufstr);
+}
+
+std::string Server::recv_lines(int socket_fd, int check_header)
+{
+	std::string bufstr;
+	char buffer[30001] = {0};
+	ssize_t valread = recv(socket_fd, buffer, 30000, 0);
+	if (valread == -1)
+	{
+		close(socket_fd);
+		throw Webserv::SystemCallException();
+	}
+	bufstr += buffer;
+	while (valread == 30000) //TODO what if request of exactly 30000 bytes
+	{
+		send_error(socket_fd, 100, "100 Continue");
+		valread = recv(socket_fd, buffer, 30000, 0);
+		if (valread == -1)
+		{
+			close(socket_fd);
+			throw Webserv::SystemCallException();
+		}
+		else if (valread)
+		{
+			buffer[valread] = '\0';
+			bufstr += buffer;
+		}
+	}
+	if (check_header)
+		bufstr = check_chunck_encoding(socket_fd, bufstr);
+	return (bufstr);
 }
 
 std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method)
@@ -98,9 +162,8 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	return (ret);
 }
 
-void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstream &outfile, size_t expected_size)
+void Server::receive_put_content(int socket_fd, std::string bufstr, std::ofstream &outfile, size_t expected_size)
 {
-	std::string bufstr(buffer);
 	std::cout << "bufstr size: " << bufstr.size() << std::endl;
 	// std::cout << bufstr << std::endl;
 
@@ -118,12 +181,11 @@ void Server::receive_put_content(int socket_fd, char buffer[30000], std::ofstrea
 	std::cout << "response sent to " << socket_fd << ": " << content << std::endl;
 }
 
-void Server::analyse_request(int socket_fd, char buffer[30000])
+void Server::analyse_request(int socket_fd, std::string bufstr)
 {
-	std::string bufstr(buffer);
 	std::string content;
-	std::cout << bufstr << std::endl;
-	// display_special_characters(bufstr); //used for debug because /r present in buffer
+	// std::cout << bufstr.size() << ": " << bufstr << std::endl;
+	display_special_characters(bufstr); //used for debug because /r present in buffer
 
 	if (check_http_version(bufstr))
 		return (send_error(socket_fd, 505, "505 HTTP Version Not Supported"));
@@ -171,7 +233,7 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 		std::string line;
 		size_t index = bufstr.find("Content-Length: ");
 		if (index == std::string::npos)
-			return (send_error(socket_fd, 411, "411 Length Required"));
+			return (send_error(socket_fd, 204, "204 No Content"));
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
@@ -196,48 +258,39 @@ void Server::analyse_request(int socket_fd, char buffer[30000])
 			send(socket_fd, content.c_str(), content.size(), 0);
 			if (expected_size)
 			{
-				recv(socket_fd, buffer, 30000, 0);
-				receive_put_content(socket_fd, buffer, outdata, expected_size);
+				bufstr = recv_lines(socket_fd, 0);
+				receive_put_content(socket_fd, bufstr, outdata, expected_size);
 			}
 			outdata.close();
 		}
 		else // post should use cgi_script
 		{
-			std::cout << "entering here" << std::endl;
-			std::ofstream outdata(file_abs_path.c_str());
-			send(socket_fd, content.c_str(), content.size(), 0);
-			if (post_offset)
-				return ;
-			recv(socket_fd, buffer, 30000, 0);
-			std::cout << "entering here too" << std::endl;
-			receive_put_content(socket_fd, buffer, outdata, expected_size);
-			outdata.close();
+			// std::cout << "entering here" << std::endl;
+			// std::ofstream outdata(file_abs_path.c_str());
+			// send(socket_fd, content.c_str(), content.size(), 0);
+			// if (!bufstr.find("\r\n\r\n"))
+			// 	bufstr = recv_lines(socket_fd, 0);
+			// std::cout << "post post: " << bufstr << std::endl;
+			// receive_put_content(socket_fd, bufstr, outdata, expected_size);
+			// outdata.close();
 		}
 		indata.close();
 	}
-	else if (!bufstr.compare(0, 7, "DELETE ")) //get_path_from_locations expected here somewhere
+	else if (!bufstr.compare(0, 7, "DELETE "))
 	{
 		std::cout << "DELETE DETECTED" << std::endl;
-		std::string file_abs_path = this->_root;
-		if (!bufstr.compare(7, 2, "/ "))
-			content = "HTTP/1.1 400 Bad Request\n"; // To discuss ??? -> I think we delete the default file given in index
-		else if (!bufstr.compare(7, 1, "/"))
+		std::string file_abs_path = get_path_from_locations(bufstr, 3, "DELETE");
+		std::cout << "Wants to delete file " << file_abs_path << std::endl;
+		if (!std::remove(file_abs_path.c_str()))
 		{
-			file_abs_path += bufstr.substr(8, bufstr.find(" ", 8) - 8);
-			std::cout << "Wants to delete file " << file_abs_path << std::endl;
-			if (!std::remove(file_abs_path.c_str()))
-			{
-				std::cout << "File deleted\n";
-				content = "HTTP/1.1 204 No Content\n";
-			}
-			else
-			{
-				std::cout << "File could not be deleted\n";
-				content = "HTTP/1.1 404 Not Found\n";
-			}
+			std::cout << "File deleted\n";
+			content = "HTTP/1.1 204 No Content\n";
 		}
 		else
-			content = "HTTP/1.1 400 Bad Request\n"; // To discuss ???
+		{
+			std::cout << "File could not be deleted\n";
+			content = "HTTP/1.1 404 Not Found\n";
+		}
 		send(socket_fd, content.c_str(), content.size(), 0);
 	}
 }
@@ -461,11 +514,17 @@ void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)
 	std::list<int>::iterator it = this->_ports.begin();
 	std::list<int>::iterator ite = this->_ports.end();
 	for (; it != ite; it++)
+	{
+		if (all_ports.find(*it) != all_ports.end())
+			it = this->_ports.erase(it);
 		all_ports.insert(*it);
+	}
 }
 
 void Server::setup_server(void)
 {
+	if (this->_ports.empty())
+		return ;
 	struct pollfd pfds[this->_ports.size()];
 	struct sockaddr_in address[this->_ports.size()];
 
@@ -504,7 +563,6 @@ void Server::setup_server(void)
 
 	int new_socket, ready;
 	size_t addrlen;
-	ssize_t valread;
 
 	while(1)
 	{
@@ -535,14 +593,9 @@ void Server::setup_server(void)
 					return ;
 				}
 
-				char buffer[30000] = {0};
-				valread = recv(new_socket, buffer, 30000, 0);
-				if (valread == -1)
-				{
-					perror("recv");
-					return ;
-				}
-				analyse_request(new_socket, buffer);
+				std::string bufstr = recv_lines(new_socket, 1);
+
+				analyse_request(new_socket, bufstr);
 				std::cout << "------------------content message sent to " << new_socket << "-------------------\n";
 				close(new_socket);
 	

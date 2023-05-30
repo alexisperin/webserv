@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/12 11:22:56 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/23 17:18:49 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 10:50:25 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,20 +24,22 @@ int main(int ac, char **av)
 		std::cerr << "Usage: ./webserv <file.conf>" << std::endl;
 		return (1);
 	}
+	Webserv *my_serv = new Webserv();
 	std::string file_name(av[1]);
 	try
 	{
-		Webserv my_serv(file_name);
-		my_serv.display_servs_content();
-		my_serv.setup_servers();
+		my_serv->init(file_name);
+		my_serv->display_servs_content();
+		my_serv->setup_servers();
 	}
 	catch (std::exception &e)
 	{
 		std::cerr << e.what() << std::endl;
+		delete my_serv;
 		return (1);
 	}
 
-	
+	delete my_serv;	
 	return (0);
 }
 

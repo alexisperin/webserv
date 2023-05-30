@@ -6,13 +6,37 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/25 13:42:26 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 12:39:19 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Webserv.hpp"
 
-Webserv::Webserv(std::string file_name)
+Webserv::Webserv(void)
+{
+	
+}
+
+Webserv::~Webserv(void)
+{
+	std::list<Server *>::iterator it = this->_servers.begin();
+	std::list<Server *>::iterator ite = this->_servers.end();
+	for (; it != ite; it++)
+		delete *it;
+	this->_servers.clear();
+	// std::cout << "Destructor of WebServer called." << std::endl;
+}
+
+// ************************************************************************** //
+//                                  Private                                   //
+// ************************************************************************** //
+
+
+// ************************************************************************** //
+//                                  Public                                    //
+// ************************************************************************** //
+
+void Webserv::init(std::string file_name)
 {
 	if (file_name.size() < 6)
 		throw Webserv::InvalidFileExtensionException();
@@ -59,27 +83,7 @@ Webserv::Webserv(std::string file_name)
 	std::list<Server *>::iterator ite = this->_servers.end();
 	for (; it != ite; it++)
 		(*it)->add_ports(all_ports, &number_of_ports);
-	if (number_of_ports != all_ports.size())
-		throw Webserv::DuplicatePortsException();
 }
-
-Webserv::~Webserv(void)
-{
-	std::list<Server *>::iterator it = this->_servers.begin();
-	std::list<Server *>::iterator ite = this->_servers.end();
-	for (; it != ite; it++)
-		delete *it;
-	this->_servers.clear();
-}
-
-// ************************************************************************** //
-//                                  Private                                   //
-// ************************************************************************** //
-
-
-// ************************************************************************** //
-//                                  Public                                    //
-// ************************************************************************** //
 
 void Webserv::display_servs_content(void)
 {
@@ -139,12 +143,12 @@ const char* Webserv::InvalidFileContentException::what() const throw()
 	return ("[Webserv::InvalidFileContentException] Configuration file contains invalid server info.");
 }
 
-const char* Webserv::DuplicatePortsException::what() const throw()
-{
-	return ("[Webserv::DuplicatePortsException] At least one port is used multiple times.");
-}
-
 const char* Webserv::MissingDefault404Exception::what() const throw()
 {
 	return ("[Webserv::MissingDefault404Exception] No default 404 file in root provided by conf file.");
+}
+
+const char* Webserv::SystemCallException::what() const throw()
+{
+	return ("[Webserv::SystemCallException] System call did not call.");
 }

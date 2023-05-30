@@ -6,7 +6,7 @@
 #    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/05/25 13:39:31 by yhuberla         ###   ########.fr        #
+#    Updated: 2023/05/30 11:01:12 by yhuberla         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -32,7 +32,7 @@ INCS		= $(foreach d, $(INCDIR), -I$d)
 # ===---===---===---===---===---===---===---===---===---===---===---===---
 
 ${OBJSDIR}/%.o: ${SRCS_DIR}/%.cpp
-			${CC} ${CPPFLAGS} ${INCS} -c -o $@ $<
+			${CC} $(SAN) ${CPPFLAGS} ${INCS} -c -o $@ $<
 
 all:		${OBJSDIR} ${NAME}
 

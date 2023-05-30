@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:12:47 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/26 17:14:29 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/30 12:36:21 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,10 @@ class Webserv
 		std::list<Server *> _servers;
 
 	public:
-		Webserv(std::string file_name);
+		Webserv(void);
 		~Webserv(void);
 
+		void init(std::string file_name);
 		void display_servs_content(void);
 		void setup_servers(void);
 
@@ -53,13 +54,13 @@ class Webserv
 			const char *what() const throw();
 	};
 
-	class DuplicatePortsException : public std::exception
+	class MissingDefault404Exception : public std::exception
 	{
 		public:
 			const char *what() const throw();
 	};
 
-	class MissingDefault404Exception : public std::exception
+	class SystemCallException : public std::exception
 	{
 		public:
 			const char *what() const throw();
