@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 19:44:51 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/31 10:45:52 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -267,9 +267,16 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		else // post should use cgi_script
 		{
 			std::string body = get_body(bufstr);
+			if (bufstr.size() != expected_size)
+				return (send_error(socket_fd, 412, "412 Precondition Failed"));
+			else if (expected_size > this->_body_size * 1000000)
+			{
+				std::cerr << "file size exceeds max_body_size of " << this->_body_size << "MB" << std::endl;
+				return (send_error(socket_fd, 413, "413 Payload Too Large"));
+			}
 			run_script(socket_fd, body);
-			content = "GET / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n";
-			send(socket_fd, content.c_str(), content.size(), 0);
+			// content = "GET / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n";
+			// send(socket_fd, content.c_str(), content.size(), 0);
 			// std::cout << "entering here" << std::endl;
 			// std::ofstream outdata(file_abs_path.c_str());
 			// send(socket_fd, content.c_str(), content.size(), 0);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:38:43 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 19:24:55 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/31 10:28:12 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <string>
 # include <fstream>
 # include <iostream>
+# include <stdlib.h>
 # include "Webserv.hpp"
 
 std::string	trim_spaces(std::string str);
@@ -27,5 +28,6 @@ int check_header_names(std::string bufstr);
 void display_special_characters(std::string str);
 void run_script(int socket_fd, std::string body);
 std::string get_body(std::string bufstr);
+char	*ft_itoa(int n);
 
 #endif

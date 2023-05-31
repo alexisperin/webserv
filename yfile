@@ -34,3 +34,10 @@ cgi_env:
  -PATH_INFO=
 
 execve is for executables, not python scripts
+
+
+TO DO:
+	- directory listing(autoindex)
+	- server names ???
+	- body in DELETE ??
+	- PATH_INFo in cgi

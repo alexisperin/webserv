@@ -12,13 +12,10 @@
 // 		print("Hello world!")
 
 #include <iostream>
-// #include <sys/socket.h>
-	// std::string content = "<HTML>\n	<HEAD>\n		<TITLE>Your Title Here</TITLE>\n	</HEAD>\n	<BODY BGCOLOR=\"FFFFFF\">\n		<img src=\"images/chesshome.png\" alt=\"Chess Home\">\n	</BODY>\n</HTML>";
+#include <sys/socket.h>
 
 int main(int ac, char **av)
 {
-	// std::string content = "GET / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n";
-	// send(3, content.c_str(), content.size(), 0);
 	if (ac != 3)
 	{
 		std::cerr << "Usage: ./cgi_script socket_fd body" << std::endl;
@@ -29,5 +26,8 @@ int main(int ac, char **av)
 		return (1);
 	}
 	std::cerr << av[1] << " with a body of " << av[2] << std::endl;
+	std::string content = "HTTP/1.1 200 OK\n\n";
+	content += "<HTML>\n	<HEAD>\n		<TITLE>Your Title Here</TITLE>\n	</HEAD>\n	<BODY BGCOLOR=\"FFFFFF\">\n		<img src=\"images/chesshome.png\" alt=\"Chess Home\">\n	</BODY>\n</HTML>";
+	send(atoi(av[1]), content.c_str(), content.size(), 0);
 	return (0);
 }

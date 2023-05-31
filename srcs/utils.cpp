@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/30 19:24:39 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/31 10:28:37 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -144,22 +144,22 @@ void display_special_characters(std::string str)
 
 void run_script(int socket_fd, std::string body)
 {
-	(void)socket_fd;
 	pid_t pid = fork();
 	if (pid == -1)
 		throw Webserv::SystemCallException();
 	if (!pid)
 	{
-		char **args = new char *[3];
+		char **args = new char *[4];
 		args[0] = new char[11];
 		strcpy(args[0], "cgi_script"); // I guess we can't strcpy
-		args[1] = new char[body.size() + 1];
-		strcpy(args[1], body.c_str());
-		args[2] = NULL;
+		args[1] = ft_itoa(socket_fd);
+		args[2] = new char[body.size() + 1];
+		strcpy(args[2], body.c_str());
+		args[3] = NULL;
 		execve("cgi_script", args, NULL);
 		perror("exec");
 		std::cerr << "execve failure args = ";
-		for (int index = 0; index < 2; index++)
+		for (int index = 0; index < 3; index++)
 		{
 			std::cerr << args[index] << ", ";
 		}
@@ -175,4 +175,51 @@ std::string get_body(std::string bufstr)
 	if (index == std::string::npos)
 		return ("");
 	return (bufstr.substr(index + 4));
+}
+
+static int	ft_itoa_len(long nbr)
+{
+	int	len;
+
+	len = 1;
+	if (nbr < 0)
+	{
+		len++;
+		nbr = -nbr;
+	}
+	while (nbr > 9)
+	{
+		len++;
+		nbr /= 10;
+	}
+	return (len);
+}
+
+static void	ft_itoa_recursive(long nbr, char *str, int index)
+{
+	if (nbr > 9)
+		ft_itoa_recursive(nbr / 10, str, index - 1);
+	str[index] = (nbr % 10) + 48;
+}
+
+char	*ft_itoa(int n)
+{
+	long	nbr;
+	char	*str;
+	int		i;
+	int		len;
+
+	nbr = (long) n;
+	len = ft_itoa_len(nbr);
+	str = new char[len + 1];
+	str[len] = 0;
+	i = 0;
+	if (nbr < 0)
+	{
+		str[i] = '-';
+		nbr = -nbr;
+		i++;
+	}
+	ft_itoa_recursive(nbr, str, len - 1);
+	return (str);
 }
