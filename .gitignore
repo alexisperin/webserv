@@ -9,3 +9,4 @@ webserv_tester
 *.o
 *.out
 *.dSYM
+*.tmp
