@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/31 17:35:09 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 11:58:28 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,18 +129,24 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	std::list<std::string> match_index_files;
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
-		size_t loc_size = this->_locations[loc_index]->_location.size();
-		if (!substr_loc.compare(0, loc_size, this->_locations[loc_index]->_location))
+		size_t loc_size = this->_locations[loc_index]->location.size();
+		if ((!this->_locations[loc_index]->suffixed && !substr_loc.compare(0, loc_size, this->_locations[loc_index]->location))
+			|| (this->_locations[loc_index]->suffixed && !substr_loc.compare(substr_loc.size() - loc_size, loc_size, this->_locations[loc_index]->location)))
 		{
-			if (std::find(this->_locations[loc_index]->_methods.begin(), this->_locations[loc_index]->_methods.end(), method) != this->_locations[loc_index]->_methods.end())
+			if (std::find(this->_locations[loc_index]->methods.begin(), this->_locations[loc_index]->methods.end(), method) != this->_locations[loc_index]->methods.end())
 			{
-				if (!match_size || loc_size > match_size)
+				if (!match_size || loc_size > match_size || this->_locations[loc_index]->suffixed)
 				{
 					match_size = loc_size;
 					match_index = loc_index;
-					match_index_files = this->_locations[loc_index]->_index_files;
-					auto_index = this->_locations[loc_index]->_auto_index;
-					this->_current_body_size = this->_locations[loc_index]->_body_size;
+					match_index_files = this->_locations[loc_index]->index_files;
+					auto_index = this->_locations[loc_index]->auto_index;
+					this->_current_body_size = this->_locations[loc_index]->body_size;
+					if (this->_locations[loc_index]->suffixed)
+					{
+						match_size = 1;
+						break ;
+					}
 				}
 			}
 		}
@@ -150,7 +156,7 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	if (!match_size)
 		ret = this->_root;
 	else
-		ret = this->_locations[match_index]->_root;
+		ret = this->_locations[match_index]->root;
 	std::string prev_loc = loc.substr(4 + method_offset, match_size);
 	loc = loc.substr(0, 4 + method_offset) + loc.substr(4 + method_offset + match_size);
 	// std::cout << "loc after: " << loc << std::endl;
@@ -266,7 +272,7 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		else // post should use cgi_script
 		{
 			std::string body = get_body(bufstr);
-			if (bufstr.size() != expected_size)
+			if (body.size() != expected_size)
 				return (send_error(socket_fd, 412, "412 Precondition Failed"));
 			else if (expected_size > this->_current_body_size * 1000000)
 			{
@@ -467,14 +473,14 @@ void Server::check_set_default(void)
 	{
 		for (size_t sub_index = 0; sub_index < index; sub_index++)
 		{
-			if (this->_locations[index]->_location == this->_locations[sub_index]->_location)
+			if (this->_locations[index]->location == this->_locations[sub_index]->location)
 				throw Webserv::InvalidFileContentException();
 		}
 		if (!this->_locations[index]->_return.empty())
 		{
 			for (size_t loc_index = 0; loc_index < index; loc_index++)
 			{
-				if (this->_locations[loc_index]->_location == this->_locations[index]->_return)
+				if (this->_locations[loc_index]->location == this->_locations[index]->_return)
 					*this->_locations[index] = *this->_locations[loc_index];
 			}
 			if (!this->_locations[index]->_return.empty())

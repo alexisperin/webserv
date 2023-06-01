@@ -18,9 +18,6 @@ Using curl we can reproduce http methods:
 https://www.digitalocean.com/community/tutorials/nginx-location-directive
 Basicly the url above tells us we still have a lot to do for the locations
 
-
-for PUT request, need to change default size fo buffer[30000] to a malloc of some kind, currently put fails if file_size > 30000 even with client_max_bocy_size way bigger than that
-
 Not allowed in C++98:
 	- string.back()/front()
 	- string.pop_back()/pop_front()
@@ -43,4 +40,5 @@ TO DO:
 	- body in DELETE ??
 	- PATH_INFo in cgi
 	- PUT with b.i.g. file sometimes stops
-	- .bla in location
+	good - .bla in location
+	- 414 Request-URI Too Long
