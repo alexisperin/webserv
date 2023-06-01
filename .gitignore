@@ -10,3 +10,4 @@ webserv_tester
 *.out
 *.dSYM
 *.tmp
+*.sh

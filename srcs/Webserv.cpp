@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/01 10:27:14 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 15:00:56 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -153,4 +153,9 @@ const char* Webserv::MissingDefault404Exception::what() const throw()
 const char* Webserv::SystemCallException::what() const throw()
 {
 	return ("[Webserv::SystemCallException] System call did not call.");
+}
+
+const char* Webserv::QuickerReturnException::what() const throw()
+{
+	return ("[Webserv::QuickerReturnException] gota go fast.");
 }

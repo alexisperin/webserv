@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:38:43 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/31 17:35:24 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 14:28:18 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,5 @@ void display_special_characters(std::string str);
 void run_script(int socket_fd, std::string body);
 std::string get_body(std::string bufstr);
 char	*ft_itoa(int n);
-std::string get_first_index_file(std::string root, std::string prev_loc, std::list<std::string> index_files, bool auto_index);
 
 #endif
