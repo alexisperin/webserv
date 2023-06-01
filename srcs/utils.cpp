@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/31 10:28:37 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/31 17:36:41 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -222,4 +222,41 @@ char	*ft_itoa(int n)
 	}
 	ft_itoa_recursive(nbr, str, len - 1);
 	return (str);
+}
+
+std::string get_first_index_file(std::string root, std::string prev_loc, std::list<std::string> index_files, bool auto_index)
+{
+	std::list<std::string>::iterator it = index_files.begin();
+	std::list<std::string>::iterator ite = index_files.end();
+	for (; it != ite; it++)
+	{
+		std::string test_path = root + *it;
+		std::ifstream indata(test_path.c_str());
+		if (indata.is_open())
+			return (root + *it);
+	}
+	if (auto_index)
+	{
+		std::string file_path = root + "listing.html.tmp";
+		std::ofstream outdata(file_path.c_str(), std::ofstream::trunc);
+		outdata << "<!DOCTYPE html>\n<html>\n <body>\n	<div>\n		<H1>Index of " << prev_loc << "</H1>\n	</div>\n";
+		struct dirent *dent;
+		DIR *dir = opendir(root.c_str());
+		std::string dot = ".";
+		if (dir != NULL)
+		{
+			while ((dent = readdir(dir)) != NULL)
+			{
+				if (dot.compare(0, 2, dent->d_name))
+					outdata << "<p><a href=\"" << prev_loc << '/' << dent->d_name << "\">" << dent->d_name << "</a></p>\n";
+			}
+		}
+		else
+			return ("");
+		closedir(dir);
+		outdata << " </body>\n</html>";
+		outdata.close();
+		return (root + "listing.html.tmp");
+	}
+	return ("");
 }

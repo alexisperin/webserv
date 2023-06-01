@@ -37,7 +37,10 @@ execve is for executables, not python scripts
 
 
 TO DO:
-	- directory listing(autoindex)
+	good - directory listing(autoindex)
 	- server names ???
+	good - body_size in locations
 	- body in DELETE ??
 	- PATH_INFo in cgi
+	- PUT with b.i.g. file sometimes stops
+	- .bla in location

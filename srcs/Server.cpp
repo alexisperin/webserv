@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/31 10:45:52 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/31 17:35:09 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,9 +62,9 @@ std::string Server::check_chunck_encoding(int socket_fd, std::string bufstr)
 	if (bufstr.find("Transfer-Encoding: chunked") == std::string::npos)
 		return  (bufstr);
 	std::string sub_bufstr;
-	char buffer[30001] = {0};
+	char buffer[BUFFER_SIZE + 1] = {0};
 	// send_error(socket_fd, 100, "100 Continue");
-	ssize_t valread = recv(socket_fd, buffer, 30000, 0);
+	ssize_t valread = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 	if (valread == -1)
 	{
 		close(socket_fd);
@@ -75,7 +75,7 @@ std::string Server::check_chunck_encoding(int socket_fd, std::string bufstr)
 		bufstr += buffer;
 		display_special_characters(buffer);
 		// send_error(socket_fd, 100, "100 Continue");
-		valread = recv(socket_fd, buffer, 30000, 0);
+		valread = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (valread == -1)
 		{
 			close(socket_fd);
@@ -90,18 +90,18 @@ std::string Server::check_chunck_encoding(int socket_fd, std::string bufstr)
 std::string Server::recv_lines(int socket_fd, int check_header)
 {
 	std::string bufstr;
-	char buffer[30001] = {0};
-	ssize_t valread = recv(socket_fd, buffer, 30000, 0);
+	char buffer[BUFFER_SIZE + 1] = {0};
+	ssize_t valread = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 	if (valread == -1)
 	{
 		close(socket_fd);
 		throw Webserv::SystemCallException();
 	}
 	bufstr += buffer;
-	while (valread == 30000) //TODO what if request of exactly 30000 bytes
+	while (valread == BUFFER_SIZE) //TODO what if request of exactly BUFFER_SIZE bytes
 	{
 		send_error(socket_fd, 100, "100 Continue");
-		valread = recv(socket_fd, buffer, 30000, 0);
+		valread = recv(socket_fd, buffer, BUFFER_SIZE, 0);
 		if (valread == -1)
 		{
 			close(socket_fd);
@@ -112,6 +112,7 @@ std::string Server::recv_lines(int socket_fd, int check_header)
 			buffer[valread] = '\0';
 			bufstr += buffer;
 		}
+		// std::cout << "valread: " << valread << std::endl;
 	}
 	if (check_header)
 		bufstr = check_chunck_encoding(socket_fd, bufstr);
@@ -124,7 +125,8 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	std::string substr_loc = loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
 	size_t match_size = 0;
 	size_t match_index;
-	std::string match_index_file;
+	bool auto_index;
+	std::list<std::string> match_index_files;
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
 		size_t loc_size = this->_locations[loc_index]->_location.size();
@@ -136,24 +138,29 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 				{
 					match_size = loc_size;
 					match_index = loc_index;
-					match_index_file = this->_locations[loc_index]->_index_files.front();
+					match_index_files = this->_locations[loc_index]->_index_files;
+					auto_index = this->_locations[loc_index]->_auto_index;
+					this->_current_body_size = this->_locations[loc_index]->_body_size;
 				}
 			}
 		}
 	}
+	if (this->_current_body_size == std::string::npos)
+		this->_current_body_size = this->_body_size;
 	if (!match_size)
 		ret = this->_root;
 	else
 		ret = this->_locations[match_index]->_root;
+	std::string prev_loc = loc.substr(4 + method_offset, match_size);
 	loc = loc.substr(0, 4 + method_offset) + loc.substr(4 + method_offset + match_size);
 	// std::cout << "loc after: " << loc << std::endl;
 
 	if (!loc.compare(4 + method_offset, 2, "/ ") || !loc.compare(4 + method_offset, 1, " "))
 	{
-		if (match_index_file.empty())
-			ret += this->_index_files.front();
+		if (match_index_files.empty())
+			ret = get_first_index_file(ret, prev_loc, this->_index_files, auto_index);
 		else
-			ret += match_index_file;
+			ret = get_first_index_file(ret, prev_loc, match_index_files, auto_index);
 	}
 	else if (!loc.compare(4 + method_offset, 1, "/"))
 		ret += loc.substr(5 + method_offset, loc.find(" ", 5 + method_offset) - (5 + method_offset));
@@ -162,21 +169,20 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	return (ret);
 }
 
-void Server::receive_put_content(int socket_fd, std::string bufstr, std::ofstream &outfile, size_t expected_size)
+void Server::receive_put_content(int socket_fd, std::string bufstr, std::ofstream &outfile, size_t expected_size, std::string content)
 {
-	std::cout << "bufstr size: " << bufstr.size() << std::endl;
+	std::cout << "bufstr size: " << bufstr.size() << ", selected max_body_size: " << this->_current_body_size << std::endl;
 	// std::cout << bufstr << std::endl;
 
-	if (bufstr.size() > this->_body_size * 1000000)
+	if (bufstr.size() > this->_current_body_size * 1000000)
 	{
-		std::cerr << "file size exceeds max_body_size of " << this->_body_size << "MB" << std::endl;
+		std::cerr << "file size exceeds max_body_size of " << this->_current_body_size << "MB" << std::endl;
 		return (send_error(socket_fd, 413, "413 Payload Too Large"));
 	}
 	else if (bufstr.size() != expected_size)
 		return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
 	outfile << bufstr;
-	std::string content("HTTP/1.1 200 OK\n");
 	send(socket_fd, content.c_str(), content.size(), 0);
 	std::cout << "response sent to " << socket_fd << ": " << content << std::endl;
 }
@@ -199,22 +205,11 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
 		std::ifstream indata(file_abs_path.c_str());
-		std::string file_content;
 		if (!indata.is_open())
-		{
-			content = ("HTTP/1.1 404 Not Found\nContent-Type:text/html\nContent-Length: ");
-			file_abs_path = this->_root + this->_error_map[404];
-			std::cout << "Error occured, now reading from file: |" << file_abs_path << '|' << std::endl;
-			std::ifstream newdata(file_abs_path.c_str());
-			if (!newdata.is_open())
-				throw Webserv::InvalidFileException();
-			file_content = read_data(newdata);
-		}
-		else
-		{
-			content = ("HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ");
-			file_content = read_data(indata);
-		}
+			return (send_error(socket_fd, 404, "404 Not Found"));
+
+		content = ("HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ");
+		std::string file_content = read_data(indata);
 
 		std::ostringstream content_length;
 		content_length << file_content.size();
@@ -238,7 +233,7 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
-		if (iss.fail() || expected_size > this->_body_size * 1000000)
+		if (iss.fail() || expected_size > this->_current_body_size * 1000000)
 			return (send_error(socket_fd, 412, "412 Precondition Failed"));
 
 		std::string file_abs_path;
@@ -252,15 +247,19 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 		if (!indata.is_open())
 			content = "HTTP/1.1 201 Created\n";
 		else
-			content = "HTTP/1.1 100 Continue\n";
+			content = "HTTP/1.1 200 OK\n";
 		if (!post_offset)
 		{
 			std::ofstream outdata(file_abs_path.c_str(), std::ofstream::trunc);
-			send(socket_fd, content.c_str(), content.size(), 0);
+			if (!outdata.is_open())
+				return (send_error(socket_fd, 404, "404 Not Found"));
+			std::string continue100 = "HTTP/1.1 100 Continue\n";
+			send(socket_fd, continue100.c_str(), continue100.size(), 0);
+			std::cout << "sending to " << socket_fd << ": " << continue100 << std::endl;
 			if (expected_size)
 			{
 				bufstr = recv_lines(socket_fd, 0);
-				receive_put_content(socket_fd, bufstr, outdata, expected_size);
+				receive_put_content(socket_fd, bufstr, outdata, expected_size, content);
 			}
 			outdata.close();
 		}
@@ -269,9 +268,9 @@ void Server::analyse_request(int socket_fd, std::string bufstr)
 			std::string body = get_body(bufstr);
 			if (bufstr.size() != expected_size)
 				return (send_error(socket_fd, 412, "412 Precondition Failed"));
-			else if (expected_size > this->_body_size * 1000000)
+			else if (expected_size > this->_current_body_size * 1000000)
 			{
-				std::cerr << "file size exceeds max_body_size of " << this->_body_size << "MB" << std::endl;
+				std::cerr << "file size exceeds max_body_size of " << this->_current_body_size << "MB" << std::endl;
 				return (send_error(socket_fd, 413, "413 Payload Too Large"));
 			}
 			run_script(socket_fd, body);
@@ -450,7 +449,7 @@ void Server::compare_block_info(std::string line, std::ifstream & indata)
 
 void Server::check_set_default(void)
 {
-	if (this->_index_files.empty() || this->_ports.empty() || this->_root.empty())
+	if (this->_ports.empty() || this->_root.empty())
 		throw Server::IncompleteServerException();
 	if (this->_error_map.find(404) == this->_error_map.end())
 	{

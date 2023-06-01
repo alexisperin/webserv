@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:10:31 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/25 18:16:42 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/05/31 13:14:46 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,10 +19,10 @@
 class Location
 {
 	private:
-		bool _auto_index;
 		bool _auto_sighted;
 		bool _line_sighted;
 		bool _return_sighted;
+		bool _body_sighted;
 
 		void compare_block_info(std::string line);
 		void check_set_default(void);
@@ -37,6 +37,8 @@ class Location
 		std::list<std::string> _index_files;
 		std::vector<std::string> _methods;
 		std::string _return;
+		size_t _body_size;
+		bool _auto_index;
 
 		void display_loc_content(void);
 };

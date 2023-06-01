@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Location.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.s19.be>             +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:12:38 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/29 11:54:33 by aperin           ###   ########.fr       */
+/*   Updated: 2023/05/31 13:15:43 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Location.hpp"
 
-Location::Location(std::string line, std::ifstream & indata, std::string root) : _auto_index(true), _auto_sighted(false),
-	_line_sighted(false), _return_sighted(false), _root(root)
+Location::Location(std::string line, std::ifstream & indata, std::string root) : _auto_sighted(false),
+	_line_sighted(false), _return_sighted(false), _body_sighted(false), _root(root), _body_size(std::string::npos), _auto_index(true)
 {
 	if (root.empty())
 		throw Webserv::InvalidFileContentException();
@@ -59,6 +59,7 @@ Location &Location::operator=(const Location & other)
 	this->_auto_index = other._auto_index;
 	this->_root = other._root;
 	this->_index_files = other._index_files;
+	this->_body_size = other._body_size;
 	return (*this);
 }
 
@@ -99,6 +100,31 @@ void Location::compare_block_info(std::string line)
 				line = line.substr(size + 1);
 			}
 		}
+	}
+	else if (!line.compare("client_max_body_size 0;") || !line.compare("client_max_body_size 0 ;"))
+	{
+		if (this->_body_sighted)
+			throw Webserv::InvalidFileContentException();
+		this->_body_sighted = true;
+		this->_body_size = 0;
+	}
+	else if (!line.compare(0, 21, "client_max_body_size "))
+	{
+		if (this->_body_sighted)
+			throw Webserv::InvalidFileContentException();
+		this->_body_sighted = true;
+		std::istringstream iss(line.substr(21));
+		int toint;
+		iss >> toint;
+		if (iss.fail() || !toint)
+			throw Webserv::InvalidFileContentException();
+		this->_body_size = toint;
+		size_t index = 21;
+		while (std::isdigit(line[index]))
+			++index;
+		if ((index == line.size() - 2 && line[index] == 'M') || (index == line.size() - 3 && line[index] == 'M' && line[index + 1] == ' '))
+			return ;
+		throw Webserv::InvalidFileContentException();
 	}
 	else if (!line.compare(0, 10, "autoindex "))
 	{
@@ -194,6 +220,8 @@ void Location::display_loc_content(void)
 	for (; it != ite; it++)
 		std::cout << *it << ' ';
 	std::cout << std::endl;
+	if (this->_body_size != std::string::npos)
+		std::cout << "\t  -body_size: " << this->_body_size << std::endl;
 	std::cout << "\t  -methods: ";
 	std::vector<std::string>::iterator iit = this->_methods.begin();
 	std::vector<std::string>::iterator iite = this->_methods.end();
