@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/01 15:13:36 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/02 17:16:56 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,14 +37,14 @@ Server::~Server(void)
 
 void Server::send_message(std::string msg)
 {
-	std::cerr << " -- status return " << msg << " --" << std::endl;
+	std::cerr << std::endl << " -- status return " << msg << " --" << std::endl;
 	std::string content = "HTTP/1.1 " + msg + "\n\n";
 	send(this->_socket_fd, content.c_str(), content.size(), 0);
 }
 
 void Server::send_error(int err_code, std::string errstr)
 {
-	std::cerr << " -- status return " << errstr << " --" << std::endl;
+	std::cerr << std::endl << " -- status return " << errstr << " --" << std::endl;
 	std::string content = "HTTP/1.1 " + errstr + '\n';
 	if (this->_error_map.find(err_code) != this->_error_map.end())
 	{
@@ -242,12 +242,16 @@ void Server::receive_put_content(std::string bufstr, std::ofstream &outfile, siz
 		send_error(412, "412 Precondition Failed");
 
 	outfile << bufstr;
-	send(this->_socket_fd, content.c_str(), content.size(), 0);
-	std::cout << "response sent to " << this->_socket_fd << ": " << content << std::endl;
+	send_message(content);
 }
 
 void Server::analyse_request(std::string bufstr)
 {
+	if (bufstr.empty())
+	{
+		std::cout << " -- empty request --" << std::endl;
+		return ;
+	}
 	std::string content;
 	// std::cout << bufstr.size() << ": " << bufstr << std::endl;
 	display_special_characters(bufstr); //used for debug because /r present in buffer
@@ -304,9 +308,9 @@ void Server::analyse_request(std::string bufstr)
 		std::cout << "checking if file: |" << file_abs_path << "| exists" << std::endl;
 		std::ifstream indata(file_abs_path.c_str());
 		if (!indata.is_open())
-			content = "HTTP/1.1 201 Created\n";
+			content = "201 Created";
 		else
-			content = "HTTP/1.1 200 OK\n";
+			content = "200 OK";
 		if (!post_offset)
 		{
 			std::ofstream outdata(file_abs_path.c_str(), std::ofstream::trunc);
@@ -667,7 +671,7 @@ void Server::setup_server(void)
 					analyse_request(bufstr);
 				}
 				catch (std::exception & e) {}
-				std::cout << "------------------content message sent to " << this->_socket_fd << "-------------------\n";
+				std::cout << std::endl << "------------------content message sent to " << this->_socket_fd << "-------------------\n";
 				close(this->_socket_fd);
 	
 				// if (pfds[j].revents & POLLIN) {
