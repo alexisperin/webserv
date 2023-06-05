@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/30 12:39:19 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 15:00:56 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,8 @@ void Webserv::init(std::string file_name)
 				else
 					this->_servers.back()->compare_block_info(line, indata);
 			}
+			else if (line[0] != '#')
+				throw Webserv::InvalidFileContentException();
 		}
 	}
 	indata.close();
@@ -151,4 +153,9 @@ const char* Webserv::MissingDefault404Exception::what() const throw()
 const char* Webserv::SystemCallException::what() const throw()
 {
 	return ("[Webserv::SystemCallException] System call did not call.");
+}
+
+const char* Webserv::QuickerReturnException::what() const throw()
+{
+	return ("[Webserv::QuickerReturnException] gota go fast.");
 }

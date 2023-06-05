@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/12 11:22:56 by aperin            #+#    #+#             */
-/*   Updated: 2023/05/30 10:50:25 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 12:28:39 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,16 @@
 
 int main(int ac, char **av)
 {
-	if (ac != 2) {
+	std::string file_name;
+	if (ac == 1)
+		file_name = "conf/default.conf";
+	else if (ac != 2) {
 		std::cerr << "Usage: ./webserv <file.conf>" << std::endl;
 		return (1);
 	}
+	else
+		file_name = av[1];
 	Webserv *my_serv = new Webserv();
-	std::string file_name(av[1]);
 	try
 	{
 		my_serv->init(file_name);

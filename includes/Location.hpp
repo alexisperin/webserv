@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:10:31 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/31 13:14:46 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 11:19:34 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,13 +32,14 @@ class Location
 		~Location(void);
 		Location &operator=(const Location & other);
 
-		std::string _location;
-		std::string _root;
-		std::list<std::string> _index_files;
-		std::vector<std::string> _methods;
+		std::string location;
+		std::string root;
+		std::list<std::string> index_files;
+		std::vector<std::string> methods;
 		std::string _return;
-		size_t _body_size;
-		bool _auto_index;
+		size_t body_size;
+		bool auto_index;
+		bool suffixed;
 
 		void display_loc_content(void);
 };

@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/05/31 14:00:22 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/01 15:07:50 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@ class Location;
 class Server
 {
 	private:
+		int _socket_fd;
 		std::list<int> _ports;
 		std::string _server_type; // listen 80 <type=ssl,default_server>;
 		std::list<std::string> _server_names; // server_name bla.com;
@@ -41,12 +42,15 @@ class Server
 		std::map<int, std::string> _error_map;
 		std::vector<Location *> _locations;
 
-		void analyse_request(int socket_fd, std::string bufstr);
-		void receive_put_content(int socket_fd, std::string bufstr, std::ofstream &outfile, size_t expected_size, std::string content);
-		std::string check_chunck_encoding(int socket_fd, std::string bufstr);
-		void send_error(int socket_fd, int err_code, std::string errstr);
-		std::string recv_lines(int socket_fd, int check_header);
+		void analyse_request(std::string bufstr);
+		void receive_put_content(std::string bufstr, std::ofstream &outfile, size_t expected_size, std::string content);
+		std::string check_chunck_encoding(std::string bufstr);
+		void send_message(std::string msg);
+		void send_error(int err_code, std::string errstr);
+		void send_method_error(std::vector<std::string> methods);
+		std::string recv_lines(int check_header);
 		std::string get_path_from_locations(std::string & loc, int head_offset, std::string method);
+		std::string get_first_index_file(std::string root, std::string prev_loc, std::list<std::string> index_files, bool auto_index);
 
 	public:
 		Server(void);
