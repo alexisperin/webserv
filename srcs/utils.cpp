@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/01 14:27:43 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/05 14:29:50 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -222,4 +222,30 @@ char	*ft_itoa(int n)
 	}
 	ft_itoa_recursive(nbr, str, len - 1);
 	return (str);
+}
+
+std::string GET_content_type(std::string file)
+{
+	size_t size = file.size();
+	if (size > 3)
+	{
+		if (!file.compare(size - 4, 4, ".css"))
+			return ("text/css");
+		else if (!file.compare(size - 4, 4, ".png"))
+			return ("image/png");
+		else if (!file.compare(size - 4, 4, ".ico"))
+			return ("image/vnd.microsoft.icon");
+		else if (!file.compare(size - 4, 4, ".pdf"))
+			return ("application/pdf");
+		else if (!file.compare(size - 4, 4, ".gif"))
+			return ("image/gif");
+		else if (size > 4)
+		{
+			if (!file.compare(size - 5, 5, ".html"))
+				return ("text/html");
+			else if (!file.compare(size - 5, 5, ".jpeg"))
+				return ("image/jpeg");
+		}
+	}
+	return ("text/plain");
 }

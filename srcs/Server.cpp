@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/02 17:16:56 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/05 16:41:54 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,8 @@ std::string Server::get_first_index_file(std::string root, std::string prev_loc,
 	}
 	if (auto_index)
 	{
-		std::string file_path = root + "listing.html.tmp";
+		std::string listing = "listing.tmp.html";
+		std::string file_path = root + listing;
 		std::ofstream outdata(file_path.c_str(), std::ofstream::trunc);
 		outdata << "<!DOCTYPE html>\n<html>\n <body>\n	<div>\n		<H1>Index of " << prev_loc << "</H1>\n	</div>\n";
 		struct dirent *dent;
@@ -105,7 +106,7 @@ std::string Server::get_first_index_file(std::string root, std::string prev_loc,
 		{
 			while ((dent = readdir(dir)) != NULL)
 			{
-				if (dot.compare(0, 2, dent->d_name))
+				if (dot.compare(0, 2, dent->d_name) && listing.compare(0, 16, dent->d_name))
 					outdata << "<p><a href=\"" << prev_loc << '/' << dent->d_name << "\">" << dent->d_name << "</a></p>\n";
 			}
 		}
@@ -114,7 +115,7 @@ std::string Server::get_first_index_file(std::string root, std::string prev_loc,
 		closedir(dir);
 		outdata << " </body>\n</html>";
 		outdata.close();
-		return (root + "listing.html.tmp");
+		return (root + listing);
 	}
 	send_error(404, "404 Not Found");
 	return ("");
@@ -172,6 +173,7 @@ std::string Server::recv_lines(int check_header)
 
 std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method)
 {
+	// std::cout << "get_path_from_loc" << std::endl;
 	std::string ret;
 	std::string substr_loc = loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
 	size_t match_size = 0;
@@ -181,8 +183,10 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
 		size_t loc_size = this->_locations[loc_index]->location.size();
-		if ((!this->_locations[loc_index]->suffixed && !substr_loc.compare(0, loc_size, this->_locations[loc_index]->location))
-			|| (this->_locations[loc_index]->suffixed && !substr_loc.compare(substr_loc.size() - loc_size, loc_size, this->_locations[loc_index]->location)))
+		// std::cout << "loc_size: " << loc_size << ", substr_loc.size" << substr_loc.size() << std::endl;
+		// std::cout << "loc: " << this->_locations[loc_index]->location << ", substr_loc" << substr_loc << std::endl;
+		if (loc_size <= substr_loc.size() && ((!this->_locations[loc_index]->suffixed && !substr_loc.compare(0, loc_size, this->_locations[loc_index]->location))
+			|| (this->_locations[loc_index]->suffixed && !substr_loc.compare(substr_loc.size() - loc_size, loc_size, this->_locations[loc_index]->location))))
 		{
 			if (!match_size || loc_size > match_size || this->_locations[loc_index]->suffixed)
 			{
@@ -199,9 +203,10 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 			}
 		}
 	}
+	// std::cout << "match_size: " << match_size << std::endl;
 	if (match_size && std::find(this->_locations[match_index]->methods.begin(), this->_locations[match_index]->methods.end(), method) == this->_locations[match_index]->methods.end())
 	{
-		send_method_error(this->_locations[match_index]->methods); // The response MUST include an Allow header containing a list of valid methods for the requested resource. 
+		send_method_error(this->_locations[match_index]->methods);
 		throw Webserv::QuickerReturnException();
 	}
 	if (this->_current_body_size == std::string::npos)
@@ -225,6 +230,8 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 		ret += loc.substr(5 + method_offset, loc.find(" ", 5 + method_offset) - (5 + method_offset));
 	else
 		ret += loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
+	if (match_size && !this->_locations[match_index]->cgi.empty())
+		Cgi(loc, ret, this);
 	return (ret);
 }
 
@@ -271,8 +278,11 @@ void Server::analyse_request(std::string bufstr)
 		if (!indata.is_open())
 			send_error(404, "404 Not Found");
 
-		content = ("HTTP/1.1 200 OK\nContent-Type:text/html\nContent-Length: ");
+		content = "HTTP/1.1 200 OK\nContent-Type:" + GET_content_type(file_abs_path) + "\nContent-Length: ";
 		std::string file_content = read_data(indata);
+
+		if (file_abs_path.size() >= 16 && !file_abs_path.compare(file_abs_path.size() - 16, 16, "listing.tmp.html"))
+			std::remove(file_abs_path.c_str());
 
 		std::ostringstream content_length;
 		content_length << file_content.size();
@@ -670,7 +680,7 @@ void Server::setup_server(void)
 					std::string bufstr = recv_lines(1);
 					analyse_request(bufstr);
 				}
-				catch (std::exception & e) {}
+				catch (std::exception & e) {/*std::cerr << e.what() << std::endl;*/}
 				std::cout << std::endl << "------------------content message sent to " << this->_socket_fd << "-------------------\n";
 				close(this->_socket_fd);
 	

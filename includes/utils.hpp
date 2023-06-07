@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:38:43 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/01 14:28:18 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/05 14:30:00 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,5 +30,6 @@ void display_special_characters(std::string str);
 void run_script(int socket_fd, std::string body);
 std::string get_body(std::string bufstr);
 char	*ft_itoa(int n);
+std::string GET_content_type(std::string file);
 
 #endif

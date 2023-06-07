@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/01 15:07:50 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/05 15:41:02 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,11 @@
 # include <vector>
 # include <map>
 # include <set>
-# include <string>
 # include <exception>
-# include <iostream>
 # include <sys/wait.h>
 # include <poll.h>
 # include "Location.hpp"
+# include "Cgi.hpp"
 class Location;
 
 # define BUFFER_SIZE 30000

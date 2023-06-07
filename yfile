@@ -25,6 +25,17 @@ Not allowed in C++98:
 	- fstream(string) -> should use fstream(char *) instead
 
 
+https://fr.wikipedia.org/wiki/Type_de_médias
+Extension:			Type MIME
+.css: 				text/css
+.html: 				text/html
+.png: 				image/png
+.ico:				image/vnd.microsoft.icon
+.pdf:				application/pdf
+.gif:				image/gif
+.jpeg:				image/jpeg
+TEXT: 				text/plain
+
 cgi_env:
  -REQUEST_METHOD="GET" (ex)
  -SERVER_PROTOCOL="HTTP/1.1"

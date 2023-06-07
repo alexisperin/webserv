@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:12:38 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/01 11:33:57 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/05 15:20:15 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,7 @@ Location &Location::operator=(const Location & other)
 	this->root = other.root;
 	this->index_files = other.index_files;
 	this->body_size = other.body_size;
+	this->cgi = other.cgi;
 	return (*this);
 }
 
@@ -173,6 +174,15 @@ void Location::compare_block_info(std::string line)
 			}
 		}
 	}
+	else if (!line.compare(0, 4, "cgi "))
+	{
+		if (!this->cgi.empty())
+			throw Webserv::InvalidFileContentException();
+		line = line.substr(4, line.size() - 5 - (line[line.size() - 2] == ' '));
+		if (line.find(' ') != std::string::npos || !line.compare(";"))
+			throw Webserv::InvalidFileContentException();
+		this->cgi = line;
+	}
 	else if (!line.compare(0, 7, "return "))
 	{
 		if (this->_line_sighted)
@@ -240,5 +250,6 @@ void Location::display_loc_content(void)
 		std::cout << *iit << ' ';
 	std::cout << std::endl;
 	std::cout << "\t  -suffixed: " << this->suffixed << std::endl;
+	std::cout << "\t  -cgi: " << this->cgi << std::endl;
 	std::cout << "\t  -return: " << this->_return << std::endl;
 }

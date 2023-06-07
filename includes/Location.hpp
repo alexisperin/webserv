@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:10:31 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/01 11:19:34 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/05 15:08:03 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ class Location
 		std::string root;
 		std::list<std::string> index_files;
 		std::vector<std::string> methods;
+		std::string cgi;
 		std::string _return;
 		size_t body_size;
 		bool auto_index;
