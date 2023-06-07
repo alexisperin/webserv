@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/05 14:29:50 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/07 15:17:08 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -248,4 +248,42 @@ std::string GET_content_type(std::string file)
 		}
 	}
 	return ("text/plain");
+}
+
+char **get_execve_args(std::string file_path)
+{
+	size_t size = file_path.size();
+	if (size > 3)
+	{
+		if (!file_path.compare(size - 3, 3, ".py"))
+		{
+			char **res = new char *[3];
+			res[0] = ft_strdup("python3");
+			res[1] = ft_strdup(file_path.c_str());
+			res[2] = NULL;
+			return (res);
+		}
+		if (!file_path.compare(size - 3, 3, ".pl"))
+		{
+			char **res = new char *[3];
+			res[0] = ft_strdup("perl");
+			res[1] = ft_strdup(file_path.c_str());
+			res[2] = NULL;
+			return (res);
+		}
+	}
+	char **res = new char *[2];
+	res[0] = ft_strdup(file_path.c_str());
+	res[1] = NULL;
+	return (res);
+}
+
+char *ft_strdup(std::string str)
+{
+	char *res = new char[str.size() + 1];
+	size_t index = 0;
+	for (; index < str.size(); index++)
+		res[index] = str[index];
+	res[index] = '\0';
+	return (res);
 }

@@ -11,3 +11,4 @@ webserv_tester
 *.dSYM
 *.tmp*
 *.sh
+resources/moucheron.html

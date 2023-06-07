@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_quotes.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/07 11:59:54 by aperin           ###   ########.fr       */
+/*   Updated: 2023/06/07 14:11:26 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,12 +38,12 @@ int main()
 	std::string html_content;
 	std::ostringstream content_length;
 
-	html_content += "<html><head><link rel=\"stylesheet\" href=\"css/quote.css\"></head>";
+	html_content += "<html><head><link rel=\"stylesheet\" href=\"../css/quote.css\"></head>";
 	html_content += "<body><div><div class=\"wave\"></div><div class=\"wave\"></div>";
 	html_content += "<div class=\"wave\"></div></div><div class=\"container\">";
-	html_content += "<div class=\"box\"><div class=\"text\">" + quote;
-	html_content += "<a href=\"quote.html\"><button class=\"button button1\">Next quote</button></a>";
-	html_content += "Next quote</button></div></div></body></html>";
+	html_content += "<div class=\"box\"><div class=\"text\">" + quote + "</div>";
+	html_content += "<a href=\"quotes.cgi\"><button class=\"button button1\">Next quote</button></a>";
+	html_content += "</div></div></body></html>";
 
 	std::string content = "HTTP/1.1 200 OK\n";
 	content_length << html_content.size();

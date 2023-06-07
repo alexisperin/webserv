@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/05 15:41:02 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/07 15:25:28 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,12 +24,9 @@
 # include "Cgi.hpp"
 class Location;
 
-# define BUFFER_SIZE 30000
-
 class Server
 {
 	private:
-		int _socket_fd;
 		std::list<int> _ports;
 		std::string _server_type; // listen 80 <type=ssl,default_server>;
 		std::list<std::string> _server_names; // server_name bla.com;
@@ -44,19 +41,21 @@ class Server
 		void analyse_request(std::string bufstr);
 		void receive_put_content(std::string bufstr, std::ofstream &outfile, size_t expected_size, std::string content);
 		std::string check_chunck_encoding(std::string bufstr);
-		void send_message(std::string msg);
-		void send_error(int err_code, std::string errstr);
+		void check_for_cgi(std::string header, std::string bufstr, int method_offset, std::string method);
 		void send_method_error(std::vector<std::string> methods);
 		std::string recv_lines(int check_header);
-		std::string get_path_from_locations(std::string & loc, int head_offset, std::string method);
+		std::string get_path_from_locations(std::string & loc, int head_offset, std::string method, bool recursive_stop);
 		std::string get_first_index_file(std::string root, std::string prev_loc, std::list<std::string> index_files, bool auto_index);
 
 	public:
 		Server(void);
 		~Server(void);
 
+		int _socket_fd;
 		void check_set_default(void);
 		void display_serv_content(void);
+		void send_message(std::string msg);
+		void send_error(int err_code, std::string errstr);
 		void setup_server(void);
 		void waitup_server(void);
 		void compare_block_info(std::string line, std::ifstream & indata);

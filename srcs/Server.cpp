@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/05 16:41:54 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/07 15:48:09 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,6 +145,29 @@ std::string Server::check_chunck_encoding(std::string bufstr)
 	return (bufstr);
 }
 
+/* look for "/cgi/" in file_path and call cgi if found */
+void Server::check_for_cgi(std::string header, std::string file_path, int method_offset, std::string method)
+{
+	size_t search = file_path.find("/cgi/");
+	if (search == std::string::npos)
+		return ;
+	// std::cout << "/cgi/ found in path" << std::endl;
+	// std::cout << std::endl;
+	// display_special_characters(header);
+	// std::cout << std::endl << "cgi_path: " << file_path << std::endl;
+
+	size_t end = file_path.find('/', search + 5);
+	if (end == std::string::npos)
+		header = header.substr(0, method_offset) + '/' + header.substr(method_offset + file_path.size());
+	else
+	{
+		file_path = file_path.substr(0, end);
+		header = header.substr(0, method_offset) + header.substr(method_offset + end);
+	}
+	get_path_from_locations(header, method_offset - 4, method, 1);
+	Cgi(header, file_path, this);
+}
+
 std::string Server::recv_lines(int check_header)
 {
 	std::string bufstr;
@@ -171,7 +194,7 @@ std::string Server::recv_lines(int check_header)
 	return (bufstr);
 }
 
-std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method)
+std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method, bool recursive_stop)
 {
 	// std::cout << "get_path_from_loc" << std::endl;
 	std::string ret;
@@ -183,6 +206,7 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
 		size_t loc_size = this->_locations[loc_index]->location.size();
+		// std::cout << "match_index: " << match_index << std::endl;
 		// std::cout << "loc_size: " << loc_size << ", substr_loc.size" << substr_loc.size() << std::endl;
 		// std::cout << "loc: " << this->_locations[loc_index]->location << ", substr_loc" << substr_loc << std::endl;
 		if (loc_size <= substr_loc.size() && ((!this->_locations[loc_index]->suffixed && !substr_loc.compare(0, loc_size, this->_locations[loc_index]->location))
@@ -204,7 +228,7 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 		}
 	}
 	// std::cout << "match_size: " << match_size << std::endl;
-	if (match_size && std::find(this->_locations[match_index]->methods.begin(), this->_locations[match_index]->methods.end(), method) == this->_locations[match_index]->methods.end())
+	if (!recursive_stop && match_size && std::find(this->_locations[match_index]->methods.begin(), this->_locations[match_index]->methods.end(), method) == this->_locations[match_index]->methods.end())
 	{
 		send_method_error(this->_locations[match_index]->methods);
 		throw Webserv::QuickerReturnException();
@@ -230,8 +254,12 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 		ret += loc.substr(5 + method_offset, loc.find(" ", 5 + method_offset) - (5 + method_offset));
 	else
 		ret += loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
+	loc = loc.substr(0, 4 + method_offset) + ret + loc.substr(loc.find(' ', 4 + method_offset));
+	if (recursive_stop)
+		return ("");
+	check_for_cgi(loc, ret, 4 + method_offset, method);
 	if (match_size && !this->_locations[match_index]->cgi.empty())
-		Cgi(loc, ret, this);
+		Cgi(loc, this->_locations[match_index]->root + this->_locations[match_index]->cgi, this);
 	return (ret);
 }
 
@@ -271,7 +299,7 @@ void Server::analyse_request(std::string bufstr)
 	{
 		int head_offset = !bufstr.compare(0, 5, "HEAD ");
 		std::cout << "GET DETECTED" << std::endl;
-		std::string file_abs_path = get_path_from_locations(bufstr, head_offset, "GET");
+		std::string file_abs_path = get_path_from_locations(bufstr, head_offset, "GET", 0);
 
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
 		std::ifstream indata(file_abs_path.c_str());
@@ -311,9 +339,9 @@ void Server::analyse_request(std::string bufstr)
 
 		std::string file_abs_path;
 		if (!post_offset)
-			file_abs_path = get_path_from_locations(bufstr, 0, "PUT");
+			file_abs_path = get_path_from_locations(bufstr, 0, "PUT", 0);
 		else
-			file_abs_path = get_path_from_locations(bufstr, 1, "POST");
+			file_abs_path = get_path_from_locations(bufstr, 1, "POST", 0);
 
 		std::cout << "checking if file: |" << file_abs_path << "| exists" << std::endl;
 		std::ifstream indata(file_abs_path.c_str());
@@ -321,6 +349,7 @@ void Server::analyse_request(std::string bufstr)
 			content = "201 Created";
 		else
 			content = "200 OK";
+		indata.close();
 		if (!post_offset)
 		{
 			std::ofstream outdata(file_abs_path.c_str(), std::ofstream::trunc);
@@ -356,12 +385,11 @@ void Server::analyse_request(std::string bufstr)
 			// receive_put_content(socket_fd, bufstr, outdata, expected_size);
 			// outdata.close();
 		}
-		indata.close();
 	}
 	else if (!bufstr.compare(0, 7, "DELETE "))
 	{
 		std::cout << "DELETE DETECTED" << std::endl;
-		std::string file_abs_path = get_path_from_locations(bufstr, 3, "DELETE");
+		std::string file_abs_path = get_path_from_locations(bufstr, 3, "DELETE", 0);
 		std::cout << "Wants to delete file " << file_abs_path << std::endl;
 		if (!std::remove(file_abs_path.c_str()))
 		{
