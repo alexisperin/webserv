@@ -1,0 +1,65 @@
+@charset "UTF-8";
+
+/***********************************
+			/* 1. BODY */
+/***********************************/
+
+body {
+	background-color:azure;
+}
+
+.container {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	height: 60vw;
+	width: 60vw;
+}
+
+.box {
+	background-color: #828282;
+	border-radius: 20px;
+	height: 60vw;
+	width: 60vw;
+}
+
+.box0 {
+	position: relative;
+	background-color: #866060;
+	width: 10vw;
+	height: 4vw;
+	text-align: center;
+	top: 5vw;
+	left: 5vw;
+	border-radius: 10px;
+}
+
+.box1 {
+	position: relative;
+	background-color: #ffffff;
+	width: 20vw;
+	height: 2vw;
+	text-align:left;
+	top: 9vw;
+	left: 5vw;
+	border-radius: 10px;
+}
+
+.text {
+	position: relative;
+	font-size: 24px;
+	font-weight: bold;
+	color: aliceblue;
+	text-shadow: 2px 2px 4px #000000;
+	top: 30%;
+}
+
+.text0 {
+	position: relative;
+	left: 15px;
+	top: 25%;
+	font-size: 20px;
+	font-weight: bold;
+	color:black;
+}

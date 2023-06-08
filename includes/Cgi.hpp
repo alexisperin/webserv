@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:35:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 12:23:48 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/08 16:05:34 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,8 +33,7 @@ class Cgi {
 		char **set_envp(std::string saved_root);
 		std::string get_port(void);
 		std::string get_method(void);
-		std::string get_path_info(std::string root);
-		std::string get_path_translated(void);
+		void add_path_info(std::map<std::string, std::string> & env_map, std::string root);
 		std::string get_script_relative(std::string root);
 		std::string get_remote_host(void);
 		void add_server_names(std::map<std::string, std::string> & env_map);

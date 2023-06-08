@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 11:06:54 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/08 18:40:56 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -156,7 +156,7 @@ void Server::check_for_cgi(std::string header, std::string file_path, int method
 	// display_special_characters(header);
 	// std::cout << std::endl << "cgi_path: " << file_path << std::endl;
 
-	size_t end = file_path.find('/', search + 5);
+	size_t end = file_path.find('/', search + 5); // + check for '?' here
 	if (end == std::string::npos)
 		header = header.substr(0, method_offset) + '/' + header.substr(method_offset + file_path.size());
 	else
@@ -364,7 +364,7 @@ void Server::analyse_request(std::string bufstr)
 			}
 			outdata.close();
 		}
-		else // post should use cgi_script
+		else
 		{
 			std::string body = get_body(bufstr);
 			if (body.size() != expected_size)

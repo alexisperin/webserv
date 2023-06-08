@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:37:51 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 12:30:18 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/08 16:22:39 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -195,8 +195,9 @@ char **Cgi::set_envp(std::string saved_root)
 	env_map.insert(std::pair<std::string, std::string>("SERVER_PROTOCOL", "HTTP/1.1"));
 	env_map.insert(std::pair<std::string, std::string>("SERVER_PORT", get_port()));
 	env_map.insert(std::pair<std::string, std::string>("REQUEST_METHOD", get_method()));
-	env_map.insert(std::pair<std::string, std::string>("PATH_INFO", get_path_info(saved_root)));
-	env_map.insert(std::pair<std::string, std::string>("PATH_TRANSLATED", get_path_translated()));
+	// env_map.insert(std::pair<std::string, std::string>("PATH_INFO", 
+	add_path_info(env_map, saved_root);
+	// env_map.insert(std::pair<std::string, std::string>("PATH_TRANSLATED", get_path_translated()));
 	env_map.insert(std::pair<std::string, std::string>("SCRIPT_NAME", get_script_relative(saved_root)));
 	env_map.insert(std::pair<std::string, std::string>("REMOTE_HOST", get_remote_host()));
 	add_server_names(env_map);
@@ -218,7 +219,7 @@ std::string Cgi::get_port(void)
 	size_t index_port = host_line.find(':', 5);
 	if (index_port == std::string::npos)
 		return ("80");
-	return (host_line.substr(index_port + 1, host_line.size() - index_port - (host_line[host_line.size() - 1] == '\r')));
+	return (host_line.substr(index_port + 1, host_line.size() - (index_port + 1) - (host_line[host_line.size() - 1] == '\r')));
 }
 
 std::string Cgi::get_method(void)
@@ -227,18 +228,21 @@ std::string Cgi::get_method(void)
 	return (this->_header.substr(0, index));
 }
 
-std::string Cgi::get_path_info(std::string root)
+void Cgi::add_path_info(std::map<std::string, std::string> & env_map, std::string root)
 {
 	size_t index_start = this->_header.find(' ') + 1;
 	size_t index_end = this->_header.find(' ', index_start);
-	return (this->_header.substr(index_start + root.size(), index_end - (index_start + root.size())));
-}
-
-std::string Cgi::get_path_translated(void)
-{
-	size_t index_start = this->_header.find(' ') + 1;
-	size_t index_end = this->_header.find(' ', index_start);
-	return (this->_header.substr(index_start, index_end - index_start));
+	size_t index_query = this->_header.find('?', index_start);
+	if (index_query != std::string::npos && index_query < index_end)
+	{
+		std::string query_string = this->_header.substr(index_query + 1, index_end - (index_query + 1));
+		env_map.insert(std::pair<std::string, std::string>("QUERY_STRING", query_string));
+		index_end = index_query;
+	}
+	std::string path_info = this->_header.substr(index_start + root.size(), index_end - (index_start + root.size()));
+	std::string path_translated = this->_header.substr(index_start, index_end - index_start);
+	env_map.insert(std::pair<std::string, std::string>("PATH_INFO", path_info));
+	env_map.insert(std::pair<std::string, std::string>("PATH_TRANSLATED", path_translated));
 }
 
 std::string Cgi::get_script_relative(std::string root)
