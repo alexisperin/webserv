@@ -1,0 +1,152 @@
+<style>
+	* {
+  margin: 0px 20px;
+  padding: 0;
+  background-color: #2f2f2f;
+  overflow: hidden;
+}
+.main {
+  height: 100vh;
+  width: 100vw;
+  position: relative;
+}
+.d1 {
+  position: absolute;
+  background-image: url(https://cdn.intra.42.fr/users/b2d0007c72bc01b0c0880ca1f9dd4632/aperin.jpg);
+  background-size: 2700px 1500px;
+
+  height: 30vh;
+  /* width: 15vw; */
+  width: 97vw;
+  left:-90%;
+
+  background-position: -30vw + 0 50%;
+
+  /* box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.8); */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  animation: dd1 10s 1, dd12 10s 1;
+  animation-delay: 0s, 0s;
+  /* animation-iteration-count: infinite; */
+  animation-fill-mode: forwards;
+}
+.text {
+	position:relative;
+	font-size: 42px;
+	font-weight: bold;
+	font-family: Apple Chancery;
+	/* text-shadow: 2px 2px 4px #ffffff; */
+	color: #ffffff;
+	text-align: center;
+	left: 5vw;
+	top: 50%;
+	background-color: #00000000;
+}
+.d2 {
+  position: absolute;
+  background-image: url(https://cdn.intra.42.fr/users/b2d0007c72bc01b0c0880ca1f9dd4632/aperin.jpg);
+  background-size: 2700px 1500px;
+
+  height: 50vh;
+  width: 25vw;
+
+  background-position: -30vw + -10vw 50%;
+  left: 10vw;
+
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  animation: dd2 10s 1;
+  animation-delay: 0s;
+  /* animation-iteration-count: infinite; */
+  animation-fill-mode: forwards;
+}
+.d3 {
+  position: absolute;
+  background-image: url(https://cdn.intra.42.fr/users/b2d0007c72bc01b0c0880ca1f9dd4632/aperin.jpg);
+  background-size: 2700px 1500px;
+  overflow: hidden;
+
+  height: 100vh;
+  width: 40vw;
+  left: 25vw;
+  /* box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.8); */
+  background-position: -30vw + -35vw 50%;
+
+  top: 55%;
+  transform: translateY(-50%);
+  z-index: 3;
+  animation: dd3 10s 1;
+  animation-delay: 0s;
+  /* animation-iteration-count: infinite; */
+  animation-fill-mode: forwards;
+}
+.d4 {
+  position: absolute;
+  overflow: hidden;
+  background-image: url(https://cdn.intra.42.fr/users/b2d0007c72bc01b0c0880ca1f9dd4632/aperin.jpg);
+  background-size: 2700px 1500px;
+
+  height: 80vh;
+  width: 25vw;
+  left: 80vw;
+  background-position: -30vw + -70vw 50%;
+
+  top: 30%;
+  transform: translateY(-50%);
+  z-index: 1;
+  animation: dd4 10s 1;
+  animation-delay: 0s;
+  /* animation-iteration-count: infinite; */
+  animation-fill-mode: forwards;
+}
+
+@keyframes dd1 {
+  0% {
+  }
+  100% {
+    left: -10%;
+  }
+}
+@keyframes dd12 {
+  0% {
+  }
+  100% {
+    background-position: Calc(-40vw + 0vw - 40px) 50%;
+  }
+}
+@keyframes dd2 {
+  0% {
+  }
+  100% {
+    background-position: Calc(-40vw + -10vw - 40px) 50%;
+	left: 0%;
+  }
+}
+@keyframes dd3 {
+  0% {
+  }
+  100% {
+    background-position: Calc(-40vw + -35vw - 40px) 50%;
+	top: 50%;
+  }
+}
+@keyframes dd4 {
+  0% {
+  }
+  100% {
+    background-position: Calc(-40vw + -70vw - 40px) 50%;
+	left: 60vw;
+	top: 50%;
+  }
+}
+
+</style>
+
+<div class="main">
+    <div class="d1"><div class="text">Neni hein fieux.</div></div>
+    <div class="d2"></div>
+    <div class="d3"></div>
+    <div class="d4"></div>
+</div>

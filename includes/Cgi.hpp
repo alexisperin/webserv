@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:35:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/07 13:22:17 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/08 12:23:48 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 # include <string>
 # include <iostream>
 # include <unistd.h>
+# include <map>
 # include "utils.hpp"
 
 class Server;
@@ -24,9 +25,23 @@ class Server;
 
 class Cgi {
 	private:
+		std::string _header;
+		std::string _file_path;
+		Server *_serv;
+
+		char **get_execve_args(void);
+		char **set_envp(std::string saved_root);
+		std::string get_port(void);
+		std::string get_method(void);
+		std::string get_path_info(std::string root);
+		std::string get_path_translated(void);
+		std::string get_script_relative(std::string root);
+		std::string get_remote_host(void);
+		void add_server_names(std::map<std::string, std::string> & env_map);
+		void add_header_field(std::map<std::string, std::string> & env_map, std::string key, std::string header_key);
 
 	public:
-		Cgi(std::string header, std::string file_path, Server *serv);
+		Cgi(std::string header, std::string file_path, Server *serv, std::string saved_root);
 		~Cgi(void);
 };
 

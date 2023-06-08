@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/07 15:17:08 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/08 11:44:58 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -250,34 +250,6 @@ std::string GET_content_type(std::string file)
 	return ("text/plain");
 }
 
-char **get_execve_args(std::string file_path)
-{
-	size_t size = file_path.size();
-	if (size > 3)
-	{
-		if (!file_path.compare(size - 3, 3, ".py"))
-		{
-			char **res = new char *[3];
-			res[0] = ft_strdup("python3");
-			res[1] = ft_strdup(file_path.c_str());
-			res[2] = NULL;
-			return (res);
-		}
-		if (!file_path.compare(size - 3, 3, ".pl"))
-		{
-			char **res = new char *[3];
-			res[0] = ft_strdup("perl");
-			res[1] = ft_strdup(file_path.c_str());
-			res[2] = NULL;
-			return (res);
-		}
-	}
-	char **res = new char *[2];
-	res[0] = ft_strdup(file_path.c_str());
-	res[1] = NULL;
-	return (res);
-}
-
 char *ft_strdup(std::string str)
 {
 	char *res = new char[str.size() + 1];
@@ -286,4 +258,33 @@ char *ft_strdup(std::string str)
 		res[index] = str[index];
 	res[index] = '\0';
 	return (res);
+}
+
+void ft_strcat(std::string src, char *dst)
+{
+	size_t cpyndex = 0;
+	for (; dst[cpyndex]; cpyndex++);
+	for (size_t index = 0; src[index]; index++, cpyndex++)
+		dst[cpyndex] = src[index];
+	dst[cpyndex] = '\0';
+}
+
+char **map_to_array(std::map<std::string, std::string> env_map)
+{
+	char **ret = new char *[env_map.size() + 1];
+
+	std::map<std::string, std::string>::iterator it = env_map.begin();
+	std::map<std::string, std::string>::iterator ite = env_map.end();
+
+	size_t index = 0;
+	for (; it != ite; it++, index++)
+	{
+		ret[index] = new char[it->first.size() + 1 + it->second.size() + 1];
+		ret[index][0] = '\0';
+		ft_strcat(it->first, ret[index]);
+		ft_strcat("=", ret[index]);
+		ft_strcat(it->second, ret[index]);
+	}
+	ret[index] = NULL;
+	return (ret);
 }
