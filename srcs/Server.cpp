@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/09 11:10:19 by aperin           ###   ########.fr       */
+/*   Updated: 2023/06/09 21:18:14 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,7 +82,34 @@ void Server::send_method_error(std::vector<std::string> methods)
 	send_error(405, content);
 }
 
-std::string Server::get_first_index_file(std::string root, std::string prev_loc, std::list<std::string> index_files, bool auto_index)
+void Server::dir_listing(DIR *dir)
+{
+	std::string body = "<!DOCTYPE html>\n<html>\n <body>\n<center>\n	<div>\n		<H1>Index of " + get_last_word(this->_initial_loc) + "</H1>\n	</div>\n";
+	struct dirent *dent;
+	std::string dot = ".";
+
+	while ((dent = readdir(dir)) != NULL)
+	{
+		if (dot.compare(0, 2, dent->d_name))
+		{
+			body += "<p><a href=\"" + this->_initial_loc;
+			if (this->_initial_loc[this->_initial_loc.size() - 1] != '/')
+				body += '/';
+			body += std::string(dent->d_name) + "\">" + std::string(dent->d_name) + "</a></p>\n";
+		}
+	}
+	closedir(dir);
+	body += "</center>\n </body>\n</html>";
+	std::ostringstream content_length;
+	content_length << body.size();
+
+	std::string content = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
+	content += content_length.str() + "\n\n" + body;
+	send(this->_socket_fd, content.c_str(), content.size(), 0);
+	throw Webserv::QuickerReturnException();
+}
+
+std::string Server::get_first_index_file(std::string root, std::list<std::string> index_files, bool auto_index)
 {
 	std::list<std::string>::iterator it = index_files.begin();
 	std::list<std::string>::iterator ite = index_files.end();
@@ -95,27 +122,9 @@ std::string Server::get_first_index_file(std::string root, std::string prev_loc,
 	}
 	if (auto_index)
 	{
-		std::string listing = "listing.tmp.html";
-		std::string file_path = root + listing;
-		std::ofstream outdata(file_path.c_str(), std::ofstream::trunc);
-		outdata << "<!DOCTYPE html>\n<html>\n <body>\n<center>\n	<div>\n		<H1>Index of " << prev_loc << "</H1>\n	</div>\n";
-		struct dirent *dent;
 		DIR *dir = opendir(root.c_str());
-		std::string dot = ".";
 		if (dir != NULL)
-		{
-			while ((dent = readdir(dir)) != NULL)
-			{
-				if (dot.compare(0, 2, dent->d_name) && listing.compare(0, 16, dent->d_name))
-					outdata << "<p><a href=\"" << prev_loc << '/' << dent->d_name << "\">" << dent->d_name << "</a></p>\n";
-			}
-		}
-		else
-			send_error(404, "404 Not Found");
-		closedir(dir);
-		outdata << "</center>\n </body>\n</html>";
-		outdata.close();
-		return (root + listing);
+			dir_listing(dir);
 	}
 	send_error(404, "404 Not Found");
 	return ("");
@@ -156,9 +165,18 @@ void Server::check_for_cgi(std::string header, std::string file_path, int method
 	// display_special_characters(header);
 	// std::cout << std::endl << "cgi_path: " << file_path << std::endl;
 
-	size_t end = file_path.find('/', search + 5); // + check for '?' here
+	size_t end = file_path.find('/', search + 5);
 	if (end == std::string::npos)
-		header = header.substr(0, method_offset) + '/' + header.substr(method_offset + file_path.size());
+	{
+		size_t end_mark = file_path.find('?', search + 5);
+		if (end_mark == std::string::npos)
+			header = header.substr(0, method_offset) + '/' + header.substr(method_offset + file_path.size());
+		else
+		{
+			file_path = file_path.substr(0, end_mark);
+			header = header.substr(0, method_offset) + header.substr(method_offset + end_mark);
+		}
+	}
 	else
 	{
 		file_path = file_path.substr(0, end);
@@ -239,17 +257,17 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 		ret = this->_root;
 	else
 		ret = this->_locations[match_index]->root;
+	this->_initial_loc = substr_loc;
 	std::string saved_root = ret;
-	std::string prev_loc = loc.substr(4 + method_offset, match_size);
 	loc = loc.substr(0, 4 + method_offset) + loc.substr(4 + method_offset + match_size);
 	// std::cout << "loc after: " << loc << std::endl;
 
 	if (!loc.compare(4 + method_offset, 2, "/ ") || !loc.compare(4 + method_offset, 1, " "))
 	{
 		if (match_index_files.empty())
-			ret = get_first_index_file(ret, prev_loc, this->_index_files, auto_index);
+			ret = get_first_index_file(ret, this->_index_files, auto_index && !method.compare("GET"));
 		else
-			ret = get_first_index_file(ret, prev_loc, match_index_files, auto_index);
+			ret = get_first_index_file(ret, match_index_files, auto_index && !method.compare("GET"));
 	}
 	else if (!loc.compare(4 + method_offset, 1, "/"))
 		ret += loc.substr(5 + method_offset, loc.find(" ", 5 + method_offset) - (5 + method_offset));
@@ -302,16 +320,21 @@ void Server::analyse_request(std::string bufstr)
 		std::cout << "GET DETECTED" << std::endl;
 		std::string file_abs_path = get_path_from_locations(bufstr, head_offset, "GET", 0);
 
+		size_t qmark = file_abs_path.find('?');
+		if (qmark != std::string::npos)
+			file_abs_path = file_abs_path.substr(0, qmark);
+
 		std::cout << "reading from file: |" << file_abs_path << '|' << std::endl;
 		std::ifstream indata(file_abs_path.c_str());
 		if (!indata.is_open())
 			send_error(404, "404 Not Found");
+		
+		DIR *dir = opendir(file_abs_path.c_str());
+		if (dir != NULL)
+			dir_listing(dir);
 
 		content = "HTTP/1.1 200 OK\nContent-Type: " + GET_content_type(file_abs_path) + "\nContent-Length: ";
 		std::string file_content = read_data(indata);
-
-		if (file_abs_path.size() >= 16 && !file_abs_path.compare(file_abs_path.size() - 16, 16, "listing.tmp.html"))
-			std::remove(file_abs_path.c_str());
 
 		std::ostringstream content_length;
 		content_length << file_content.size();
@@ -360,7 +383,7 @@ void Server::analyse_request(std::string bufstr)
 			if (body.empty() && expected_size)
 			{
 				send_message("100 Continue");
-				body = recv_lines(0);		
+				body = recv_lines(0);	
 			}
 			receive_put_content(body, outdata, expected_size, content);
 			outdata.close();
@@ -627,114 +650,6 @@ void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)
 			it = this->_ports.erase(it);
 		all_ports.insert(*it);
 	}
-}
-
-void Server::setup_server(void)
-{
-	if (this->_ports.empty())
-		return ;
-	struct pollfd pfds[this->_ports.size()];
-	struct sockaddr_in address[this->_ports.size()];
-
-	std::list<int>::iterator it = this->_ports.begin();
-	std::list<int>::iterator ite = this->_ports.end();
-	
-	int index = 0;
-	for (; it != ite; it++)
-	{
-		std::cout << "Setting up port " << *it << '.' << std::endl;
-
-		if ((pfds[index].fd = socket(PF_INET, SOCK_STREAM, 0)) == 0)
-		{
-			perror("socket");
-			return ;
-		}
-		pfds[index].events = POLLIN;
-
-		address[index].sin_family = PF_INET;
-		address[index].sin_addr.s_addr = INADDR_ANY;
-		address[index].sin_port = htons(*it);
-
-		if (bind(pfds[index].fd, (struct sockaddr *) &address[index], sizeof(address[index])) < 0)
-		{
-			perror("bind");
-			return ;
-		}
-
-		if (listen(pfds[index].fd, 10) < 0)
-		{
-			perror("listen");
-			return ;
-		}
-		++index;
-	}
-
-	int ready;
-	size_t addrlen;
-
-	while(1)
-	{
-		std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
-		ready = poll(pfds, this->_ports.size(), -1);
-		if (ready == -1)
-		{
-			perror("poll");
-			return ;
-		}
-
-		(ready == 1)
-			? std::cout << "1 socket ready" << std::endl
-			: std::cout << ready << " sockets ready" << std::endl;
-		for (size_t index = 0; index < this->_ports.size(); index++) {
-
-			if (pfds[index].revents != 0) {
-				std::cout << "  - socket = " << pfds[index].fd << "; events: ";
-				(pfds[index].revents & POLLIN)  ? std::cout << "POLLIN "  : std::cout << "";
-				(pfds[index].revents & POLLHUP) ? std::cout << "POLLHUP " : std::cout << "";
-				(pfds[index].revents & POLLERR) ? std::cout << "POLLERR " : std::cout << "";
-				std::cout << std::endl << std::endl;
-
-				addrlen = sizeof(address[index]);
-				if ((this->_socket_fd = accept(pfds[index].fd, (struct sockaddr *) &address[index], (socklen_t*) &addrlen)) < 0)
-				{
-					perror("accept");
-					return ;
-				}
-
-				try
-				{
-					std::string bufstr = recv_lines(1);
-					analyse_request(bufstr);
-				}
-				catch (std::exception & e) {/*std::cerr << e.what() << std::endl;*/}
-				std::cout << std::endl << "------------------content message sent to " << this->_socket_fd << "-------------------\n";
-				close(this->_socket_fd);
-	
-				// if (pfds[j].revents & POLLIN) {
-				// 	ssize_t s = read(pfds[j].fd, buf, sizeof(buf));
-				// 	if (s == -1)
-				// 		errExit("read");
-				// 	printf("    read %zd bytes: %.*s\n",
-				// 			s, (int) s, buf);
-				// } else {                /* POLLERR | POLLHUP */
-				// 	printf("    closing fd %d\n", pfds[j].fd);
-				// 	if (close(pfds[j].fd) == -1)
-				// 		errExit("close");
-				// 	num_open_fds--;
-				// }
-			}
-		}
-
-	}
-}
-
-void Server::waitup_server(void)
-{
-	std::list<int>::iterator it = this->_ports.begin();
-	std::list<int>::iterator ite = this->_ports.end();
-
-	for (; it != ite; it++)
-		waitpid(-1, NULL, 0);
 }
 
 // ************************************************************************** //

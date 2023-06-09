@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/09 11:13:09 by aperin           ###   ########.fr       */
+/*   Updated: 2023/06/09 17:38:40 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -167,6 +167,8 @@ std::string GET_content_type(std::string file)
 			return ("application/pdf");
 		else if (!file.compare(size - 4, 4, ".gif"))
 			return ("image/gif");
+		else if (!file.compare(size - 4, 4, ".jpg"))
+			return ("image/jpg");
 		else if (size > 4)
 		{
 			if (!file.compare(size - 5, 5, ".html"))
@@ -215,4 +217,26 @@ char **map_to_array(std::map<std::string, std::string> env_map)
 	}
 	ret[index] = NULL;
 	return (ret);
+}
+
+std::string get_last_word(std::string str)
+{
+	size_t index = str.rfind('/');
+	if (index == std::string::npos)
+		return ("/");
+	if (index != str.size() - 1)
+		return (str.substr(index));
+	if (index == 0)
+		return (str);
+	size_t prev_index = str.rfind('/', index - 1);
+	if (prev_index == std::string::npos)
+		return (str);
+	while (prev_index == index - 1)
+	{
+		index = prev_index;
+		prev_index = str.rfind('/', index - 1);
+		if (prev_index == std::string::npos)
+			return (str);
+	}
+	return (str.substr(prev_index));
 }

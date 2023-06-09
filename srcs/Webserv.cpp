@@ -6,7 +6,7 @@
 /*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/01 15:00:56 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/09 17:32:09 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,32 +98,129 @@ void Webserv::display_servs_content(void)
 	}
 }
 
+Server *Webserv::get_polling_serv(uint16_t sin_port)
+{
+	std::list<Server *>::iterator it = this->_servers.begin();
+	std::list<Server *>::iterator ite = this->_servers.end();
+
+	std::cout << "sin_port: " << (int)sin_port << std::endl;
+	for (; it != ite; it++)
+	{
+		std::list<int>::iterator pit = (*it)->_ports.begin();
+		std::list<int>::iterator pite = (*it)->_ports.end();
+		for (; pit != pite; pit++)
+		{
+			if (*pit == sin_port)
+				return (*it);
+		}
+	}
+	return (NULL);
+}
+
 void Webserv::setup_servers(void)
 {
 	std::list<Server *>::iterator it = this->_servers.begin();
 	std::list<Server *>::iterator ite = this->_servers.end();
 	
-	pid_t pid;
+	std::list<Server *>::iterator it_tmp = it;
+
+	size_t total_ports = 0;
+	for (; it_tmp != ite; it_tmp++)
+		total_ports += (*it_tmp)->_ports.size();
+
+	struct pollfd pfds[total_ports];
+	struct sockaddr_in address[total_ports];
+	size_t index = 0;
+
 	for (; it != ite; it++)
 	{
-		pid = fork();
-		if (pid == -1)
+		if ((*it)->_ports.empty())
+			continue ;
+
+		std::list<int>::iterator pit = (*it)->_ports.begin();
+		std::list<int>::iterator pite = (*it)->_ports.end();
+		
+		for (; pit != pite; pit++)
 		{
-			perror("fork");
-			return ;
-		}
-		if (!pid)
-		{
-			(*it)->setup_server();
-			return ;
+			std::cout << "Setting up port " << *pit << '.' << std::endl;
+
+			if ((pfds[index].fd = socket(PF_INET, SOCK_STREAM, 0)) == 0)
+			{
+				perror("socket");
+				return ;
+			}
+			pfds[index].events = POLLIN;
+
+			address[index].sin_family = PF_INET;
+			address[index].sin_addr.s_addr = INADDR_ANY;
+			address[index].sin_port = htons(*pit);
+
+			if (bind(pfds[index].fd, (struct sockaddr *) &address[index], sizeof(address[index])) < 0)
+			{
+				perror("bind");
+				return ;
+			}
+
+			if (listen(pfds[index].fd, 10) < 0)
+			{
+				perror("listen");
+				return ;
+			}
+			++index;
 		}
 	}
 
-	it = this->_servers.begin();
-	ite = this->_servers.end();
-	
-	for (; it != ite; it++)
-		(*it)->waitup_server();
+	int ready;
+	size_t addrlen;
+
+	while(1)
+	{
+		std::cout << "\n+++++++ Waiting for new connection ++++++++\n\n";
+		ready = poll(pfds, total_ports, -1);
+		if (ready == -1)
+		{
+			perror("poll");
+			return ;
+		}
+
+		(ready == 1)
+			? std::cout << "1 socket ready" << std::endl
+			: std::cout << ready << " sockets ready" << std::endl;
+		for (size_t index = 0; index < total_ports; index++) {
+
+			if (pfds[index].revents != 0) {
+				std::cout << "  - (index " << index << ") socket = " << pfds[index].fd << "; events: ";
+				(pfds[index].revents & POLLIN)  ? std::cout << "POLLIN "  : std::cout << "";
+				(pfds[index].revents & POLLHUP) ? std::cout << "POLLHUP " : std::cout << "";
+				(pfds[index].revents & POLLERR) ? std::cout << "POLLERR " : std::cout << "";
+				std::cout << std::endl << std::endl;
+
+				Server *polling_serv = get_polling_serv(ntohs(address[index].sin_port));
+				if (!polling_serv)
+				{
+					std::cerr << "ERROR: no matching port in servers ?????" << std::endl;
+					continue ;
+				}
+
+				addrlen = sizeof(address[index]);
+				if ((polling_serv->_socket_fd = accept(pfds[index].fd, NULL, 0)) < 0)//(struct sockaddr *) &address->butnotaddressthatisup[index], (socklen_t*) &addrlen)) < 0)
+				{
+					perror("accept");
+					return ;
+				}
+
+				try
+				{
+					std::string bufstr = polling_serv->recv_lines(1);
+					polling_serv->analyse_request(bufstr);
+				}
+				catch (std::exception & e) {/*std::cerr << e.what() << std::endl;*/}
+				std::cout << std::endl << "------------------content message sent to " << polling_serv->_socket_fd << "-------------------\n";
+				close(polling_serv->_socket_fd);
+			}
+		}
+		// return ;
+	}
 }
 
 // ************************************************************************** //

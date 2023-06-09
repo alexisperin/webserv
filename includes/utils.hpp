@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:38:43 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/09 11:09:25 by aperin           ###   ########.fr       */
+/*   Updated: 2023/06/09 16:28:54 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,5 +32,6 @@ std::string GET_content_type(std::string file);
 char **get_execve_args(std::string file_path);
 char *ft_strdup(std::string str);
 char **map_to_array(std::map<std::string, std::string> env_map);
+std::string get_last_word(std::string str);
 
 #endif
