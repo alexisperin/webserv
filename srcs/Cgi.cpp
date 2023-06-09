@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:37:51 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 16:22:39 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/09 11:47:45 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,8 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 	// if GET + query => '?' in URL, which we put in QUERY_STRING env var
 	// if POST + body, print it to std::in of cgi
 	int body_fd[2];
-	pipe(body_fd);
+	if (pipe(body_fd) == -1)
+		serv->send_error(500, "500 Internal Server Error");
 	size_t index = header.find("Content-Length: ");
 	size_t expected_size = std::string::npos;
 	if (index == std::string::npos)
@@ -57,17 +58,20 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 	//fork and call cgi
 
 	int pipe_fd[2];
-	pipe(pipe_fd);
+	if (pipe(pipe_fd) == -1)
+		serv->send_error(500, "500 Internal Server Error");
 	pid_t pid = fork();
 	if (pid == -1)
-		throw Webserv::SystemCallException();
+		serv->send_error(500, "500 Internal Server Error");
 	if (!pid)
 	{
 		char **args = get_execve_args();
-		dup2(pipe_fd[1], 1);
+		if (dup2(pipe_fd[1], 1) == -1)
+			serv->send_error(500, "500 Internal Server Error");
 		close(pipe_fd[0]);
 		close(pipe_fd[1]);
-		dup2(body_fd[0], 0);
+		if (dup2(body_fd[0], 0) == -1)
+			serv->send_error(500, "500 Internal Server Error");
 		close(body_fd[0]);
 		close(body_fd[1]);
 		execve(args[0], args, envp);

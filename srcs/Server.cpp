@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:56:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 18:40:56 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/09 11:10:19 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ std::string Server::get_first_index_file(std::string root, std::string prev_loc,
 		std::string listing = "listing.tmp.html";
 		std::string file_path = root + listing;
 		std::ofstream outdata(file_path.c_str(), std::ofstream::trunc);
-		outdata << "<!DOCTYPE html>\n<html>\n <body>\n	<div>\n		<H1>Index of " << prev_loc << "</H1>\n	</div>\n";
+		outdata << "<!DOCTYPE html>\n<html>\n <body>\n<center>\n	<div>\n		<H1>Index of " << prev_loc << "</H1>\n	</div>\n";
 		struct dirent *dent;
 		DIR *dir = opendir(root.c_str());
 		std::string dot = ".";
@@ -113,7 +113,7 @@ std::string Server::get_first_index_file(std::string root, std::string prev_loc,
 		else
 			send_error(404, "404 Not Found");
 		closedir(dir);
-		outdata << " </body>\n</html>";
+		outdata << "</center>\n </body>\n</html>";
 		outdata.close();
 		return (root + listing);
 	}
@@ -264,20 +264,20 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	return (ret);
 }
 
-void Server::receive_put_content(std::string bufstr, std::ofstream &outfile, size_t expected_size, std::string content)
+void Server::receive_put_content(std::string body, std::ofstream &outfile, size_t expected_size, std::string content)
 {
-	std::cout << "bufstr size: " << bufstr.size() << ", selected max_body_size: " << this->_current_body_size << std::endl;
-	// std::cout << bufstr << std::endl;
+	std::cout << "body size: " << body.size() << ", selected max_body_size: " << this->_current_body_size << std::endl;
+	// std::cout << body << std::endl;
 
-	if (bufstr.size() > this->_current_body_size * 1000000)
+	if (body.size() > this->_current_body_size * 1000000)
 	{
 		std::cerr << "file size exceeds max_body_size of " << this->_current_body_size << "MB" << std::endl;
 		send_error(413, "413 Payload Too Large");
 	}
-	else if (bufstr.size() != expected_size)
+	else if (body.size() != expected_size)
 		send_error(412, "412 Precondition Failed");
 
-	outfile << bufstr;
+	outfile << body;
 	send_message(content);
 }
 
@@ -307,7 +307,7 @@ void Server::analyse_request(std::string bufstr)
 		if (!indata.is_open())
 			send_error(404, "404 Not Found");
 
-		content = "HTTP/1.1 200 OK\nContent-Type:" + GET_content_type(file_abs_path) + "\nContent-Length: ";
+		content = "HTTP/1.1 200 OK\nContent-Type: " + GET_content_type(file_abs_path) + "\nContent-Length: ";
 		std::string file_content = read_data(indata);
 
 		if (file_abs_path.size() >= 16 && !file_abs_path.compare(file_abs_path.size() - 16, 16, "listing.tmp.html"))
@@ -356,12 +356,13 @@ void Server::analyse_request(std::string bufstr)
 			std::ofstream outdata(file_abs_path.c_str(), std::ofstream::trunc);
 			if (!outdata.is_open())
 				send_error(404, "404 Not Found");
-			send_message("100 Continue");
-			if (expected_size)
+			std::string body =  get_body(bufstr);
+			if (body.empty() && expected_size)
 			{
-				bufstr = recv_lines(0);
-				receive_put_content(bufstr, outdata, expected_size, content);
+				send_message("100 Continue");
+				body = recv_lines(0);		
 			}
+			receive_put_content(body, outdata, expected_size, content);
 			outdata.close();
 		}
 		else
@@ -374,17 +375,13 @@ void Server::analyse_request(std::string bufstr)
 				std::cerr << "file size exceeds max_body_size of " << this->_current_body_size << "MB" << std::endl;
 				send_error(413, "413 Payload Too Large");
 			}
-			run_script(this->_socket_fd, body);
-			// content = "GET / HTTP/1.1\r\nHost: localhost\r\nUser-Agent: curl/7.64.1\r\nAccept: */*\r\n\r\n";
-			// send(this->_socket_fd, content.c_str(), content.size(), 0);
-			// std::cout << "entering here" << std::endl;
-			// std::ofstream outdata(file_abs_path.c_str());
-			// send(this->_socket_fd, content.c_str(), content.size(), 0);
-			// if (!bufstr.find("\r\n\r\n"))
-			// 	bufstr = recv_lines(socket_fd, 0);
-			// std::cout << "post post: " << bufstr << std::endl;
-			// receive_put_content(socket_fd, bufstr, outdata, expected_size);
-			// outdata.close();
+			body = "Body received :\n" + body;
+			content = "HTTP/1.1 202 Accepted\nContent-Type: text/plain\nContent-Length: ";
+			std::ostringstream content_length;
+			content_length << body.size();
+			content += content_length.str() + "\n\n" + body;
+			send(this->_socket_fd, content.c_str(), content.size(), 0);
+			std::cout << "-- return status 202 Accepted --" << std::endl;
 		}
 	}
 	else if (!bufstr.compare(0, 7, "DELETE "))

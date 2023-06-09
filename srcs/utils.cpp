@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 11:44:58 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/09 11:13:09 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,6 +84,8 @@ int check_header_names(std::string bufstr)
 	{
 		index += 2;
 		size_t endl_index = bufstr.find("\r\n", index);
+		if (endl_index != std::string::npos && endl_index == index)
+			return (0);
 		size_t end_line = endl_index;
 		if (endl_index == std::string::npos)
 			end_line = bufstr.size();
@@ -142,86 +144,12 @@ void display_special_characters(std::string str)
 	std::cout << "EOF" << std::endl;
 }
 
-void run_script(int socket_fd, std::string body)
-{
-	pid_t pid = fork();
-	if (pid == -1)
-		throw Webserv::SystemCallException();
-	if (!pid)
-	{
-		char **args = new char *[4];
-		args[0] = new char[11];
-		strcpy(args[0], "cgi_script"); // I guess we can't strcpy
-		args[1] = ft_itoa(socket_fd);
-		args[2] = new char[body.size() + 1];
-		strcpy(args[2], body.c_str());
-		args[3] = NULL;
-		execve("cgi_script", args, NULL);
-		perror("exec");
-		std::cerr << "execve failure args = ";
-		for (int index = 0; index < 3; index++)
-		{
-			std::cerr << args[index] << ", ";
-		}
-		std::cerr << std::endl;
-		exit(1);
-	}
-	waitpid(pid, NULL, 0);
-}
-
 std::string get_body(std::string bufstr)
 {
 	size_t index = bufstr.find("\r\n\r\n");
 	if (index == std::string::npos)
 		return ("");
 	return (bufstr.substr(index + 4));
-}
-
-static int	ft_itoa_len(long nbr)
-{
-	int	len;
-
-	len = 1;
-	if (nbr < 0)
-	{
-		len++;
-		nbr = -nbr;
-	}
-	while (nbr > 9)
-	{
-		len++;
-		nbr /= 10;
-	}
-	return (len);
-}
-
-static void	ft_itoa_recursive(long nbr, char *str, int index)
-{
-	if (nbr > 9)
-		ft_itoa_recursive(nbr / 10, str, index - 1);
-	str[index] = (nbr % 10) + 48;
-}
-
-char	*ft_itoa(int n)
-{
-	long	nbr;
-	char	*str;
-	int		i;
-	int		len;
-
-	nbr = (long) n;
-	len = ft_itoa_len(nbr);
-	str = new char[len + 1];
-	str[len] = 0;
-	i = 0;
-	if (nbr < 0)
-	{
-		str[i] = '-';
-		nbr = -nbr;
-		i++;
-	}
-	ft_itoa_recursive(nbr, str, len - 1);
-	return (str);
 }
 
 std::string GET_content_type(std::string file)
