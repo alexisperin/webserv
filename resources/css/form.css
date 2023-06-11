@@ -13,9 +13,11 @@ body {
 	font-family: sans-serif;
 	background: linear-gradient(#141e30, #243b55);
 }
-
 .cookie {
 	background: linear-gradient(#2b2007, #9d7330);
+}
+.login {
+	background: linear-gradient(#19051e, #6f2588);
 }
 
 .global-box {
@@ -72,11 +74,11 @@ body {
 	font-size: 12px;
 }
 
-.global-box .cookie-box {
+.global-box .number-box {
 	position: relative;
 }
 
-.global-box .cookie-box input {
+.global-box .number-box input {
 	width: 100%;
 	padding: 10px 0;
 	font-size: 16px;
@@ -87,7 +89,7 @@ body {
 	outline: none;
 	background: transparent;
 }
-.global-box .cookie-box label {
+.global-box .number-box label {
 	position: absolute;
 	top: -20px;
 	left: 0;
@@ -97,11 +99,11 @@ body {
 	pointer-events: none;
 }
 
-.global-box .cookie-box input:valid ~ label {
+.global-box .number-box input:valid ~ label {
 	color: #03e9f4;;
 }
 
-.global-box .cookie-box input:invalid {
+.global-box .number-box input:invalid {
 	animation: justshake 0.3s forwards;
 	color: #f40303;
 }
