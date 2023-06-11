@@ -14,6 +14,10 @@ body {
 	background: linear-gradient(#141e30, #243b55);
 }
 
+.cookie {
+	background: linear-gradient(#2b2007, #9d7330);
+}
+
 .global-box {
 	position: absolute;
 	top: 50%;
@@ -67,6 +71,58 @@ body {
 	color: #03e9f4;
 	font-size: 12px;
 }
+
+.global-box .cookie-box {
+	position: relative;
+}
+
+.global-box .cookie-box input {
+	width: 100%;
+	padding: 10px 0;
+	font-size: 16px;
+	color: #fff;
+	margin-bottom: 30px;
+	border: none;
+	border-bottom: 1px solid #fff;
+	outline: none;
+	background: transparent;
+}
+.global-box .cookie-box label {
+	position: absolute;
+	top: -20px;
+	left: 0;
+	color: #fff;
+	font-size: 12px;
+	padding: 10px 0;
+	pointer-events: none;
+}
+
+.global-box .cookie-box input:valid ~ label {
+	color: #03e9f4;;
+}
+
+.global-box .cookie-box input:invalid {
+	animation: justshake 0.3s forwards;
+	color: #f40303;
+}
+
+@keyframes justshake {
+	25% {
+	  transform: translateX(5px);
+	}
+  
+	50% {
+	  transform: translateX(-5px);
+	}
+  
+	75% {
+	  transform: translateX(5px);
+	}
+  
+	100% {
+	  transform: translateX-(5px);
+	}
+  }
 
 .global-box form button {
 	position: relative;

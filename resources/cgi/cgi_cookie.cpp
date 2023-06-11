@@ -6,7 +6,7 @@
 /*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/11 16:42:15 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/11 17:59:56 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -77,9 +77,7 @@ class Parse
 			std::cerr << "key: " << this->_key << "\nvalue: " << this->_value << "\ntime: " << this->_time << "\nbutton: " << this->_button << "\nquery: " << this->_query << "\nport: " << this->_port << std::endl;
 			if (!this->_button.compare(0, 3, "set"))
 			{
-				std::cout << "HTTP/1.1 307 Temporary Redirect\nlocation: http://localhost:";
-				std::cout << this->_port;
-				std::cout << "/cookie.html\n";
+				std::cout << "HTTP/1.1 205 Reset Content\n";
 				std::cout << "Set-Cookie: " << this->_key << '=' << this->_value << "; ";
 				if (!this->_time.empty())
 					std::cout << "Max-Age=" << this->_time << "; ";
@@ -87,9 +85,7 @@ class Parse
 			}
 			else if (!this->_button.compare(0, 6, "remove"))
 			{
-				std::cout << "HTTP/1.1 307 Temporary Redirect\nlocation: http://localhost:";
-				std::cout << this->_port;
-				std::cout << "/cookie.html\n";
+				std::cout << "HTTP/1.1 205 Reset Content\n";
 				std::cout << "Set-Cookie: " << this->_key << '=' << this->_value << "; ";
 				std::cout << "Path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT\n\n";
 			}

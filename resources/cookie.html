@@ -2,7 +2,7 @@
 <head>
 	<link rel="stylesheet" href="../css/form.css">
 </head> 
-<body>
+<body class="cookie">
 	<div class="global-box">
 		<h2>Cookie box</h2>
 		<form action="/cgi/cookie.cgi">
@@ -14,8 +14,8 @@
 				<input type="text" name="value" required="">
 				<label>Cookie-value</label>
 			</div>
-			<div class="user-box">
-				<input type="text" name="life">
+			<div class="cookie-box">
+				<input type="text" name="life" pattern="\d+" placeholder="Numbers only">
 				<label>Cookie-lifetime (s)</label>
 			</div>
 			<button type="set" name="set">set</button>
