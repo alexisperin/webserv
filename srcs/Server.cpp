@@ -230,6 +230,8 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 		if (loc_size <= substr_loc.size() && ((!this->_locations[loc_index]->suffixed && !substr_loc.compare(0, loc_size, this->_locations[loc_index]->location))
 			|| (this->_locations[loc_index]->suffixed && !substr_loc.compare(substr_loc.size() - loc_size, loc_size, this->_locations[loc_index]->location))))
 		{
+			if (this->_locations[loc_index]->location[this->_locations[loc_index]->location.size() - 1] != '/' && loc_size < substr_loc.size() && substr_loc[loc_size] != '/')
+				continue ;
 			if (!match_size || loc_size > match_size || this->_locations[loc_index]->suffixed)
 			{
 				match_size = loc_size;

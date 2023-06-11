@@ -6,7 +6,7 @@
 /*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:37:51 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/11 13:59:46 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/11 15:00:57 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,7 +152,7 @@ char **Cgi::get_execve_args(void)
 		if (!this->_file_path.compare(size - 3, 3, ".py"))
 		{
 			char **res = new char *[3];
-			res[0] = ft_strdup("python3");
+			res[0] = ft_strdup("/usr/bin/python3");
 			res[1] = ft_strdup(this->_file_path.c_str());
 			res[2] = NULL;
 			return (res);
@@ -190,7 +190,7 @@ char **Cgi::set_envp(std::string saved_root)
 	HTTP_ACCEPT
 	HTTP_ACCEPT_LANGUAGE
 	HTTP_USER_AGENT
- *  //QUERY_STRING: the part of URL after the "?" character. The query string may be composed of *name=value pairs separated with ampersands (such as var1=val1&var2=val2...) when used to submit form data transferred via GET method as defined by HTML application/x-www-form-urlencoded.
+	QUERY_STRING: the part of URL after the "?" character. The query string may be composed of *name=value pairs separated with ampersands (such as var1=val1&var2=val2...) when used to submit form data transferred via GET method as defined by HTML application/x-www-form-urlencoded.
 	
  *	//HTTP_COOKIE for now
 	*/
@@ -210,6 +210,7 @@ char **Cgi::set_envp(std::string saved_root)
 	add_header_field(env_map, "HTTP_ACCEPT", "Accept: ");
 	add_header_field(env_map, "HTTP_ACCEPT_LANGUAGE", "Accept-Language: ");
 	add_header_field(env_map, "HTTP_USER_AGENT", "User-Agent: ");
+	add_header_field(env_map, "HTTP_COOKIE", "Cookie: ");
 
 	return (map_to_array(env_map));
 }

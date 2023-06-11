@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_form.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/09 21:23:28 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/11 14:51:59 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ class Parse
 		std::string _root;
 		std::string _query;
 		std::string _method;
+		std::string _port;
 	
 	public:
 		Parse(char **envp)
@@ -83,11 +84,15 @@ class Parse
 					this->_root = var.substr(16);
 				else if (!var.compare(0, 13, "QUERY_STRING="))
 					this->_query = var.substr(13);
+				else if (!var.compare(0, 12, "SERVER_PORT="))
+					this->_port = var.substr(12);
 			}
 			if (this->_root.empty())
 				send_error("PATH_TRANSLATED missing");
 			if (this->_query.empty())
 				send_error("QUERY_STRING missing");
+			if (this->_port.empty())
+				send_error("SERVER_PORT missing");
 		}
 		~Parse(void) {}
 		void set_info(void)
@@ -111,7 +116,7 @@ class Parse
 		}
 		void handle_request(void)
 		{
-			std::cerr << "file: " << this->_file << "\ncopy file: " << this->_copy_file << "\nroot: " << this->_root << "\nquery: " << this->_query << "\nmethod: " << this->_method << std::endl;
+			std::cerr << "file: " << this->_file << "\ncopy file: " << this->_copy_file << "\nroot: " << this->_root << "\nquery: " << this->_query << "\nmethod: " << this->_method << "\nport: " << this->_port << std::endl;
 			if (!this->_method.compare(0, 3, "get"))
 			{
 				std::cerr << "in get method" << std::endl;
@@ -151,14 +156,20 @@ class Parse
 
 
 				outdata << file_content;
-				std::cout << "HTTP/1.1 307 Temporary Redirect\nlocation: http://localhost/form_put.html\n\n";
+				std::cout << "HTTP/1.1 307 Temporary Redirect\nlocation: http://localhost:";
+				std::cout << this->_port;
+				std::cout << "/form_put.html\n\n";
 				
 				outdata.close();
 			}
 			else if (!this->_method.compare(0, 3, "del"))
 			{
 				if (!std::remove(this->_file.c_str()))
-					std::cout << "HTTP/1.1 307 Temporary Redirect\nlocation: http://localhost/form_delete.html\n\n";
+				{
+					std::cout << "HTTP/1.1 307 Temporary Redirect\nlocation: http://localhost:";
+					std::cout << this->_port;
+					std::cout << "/form_delete.html\n\n";
+				}
 				else
 				{
 					std::cout << "HTTP/1.1 404 Not Found\n\n";

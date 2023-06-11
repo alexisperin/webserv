@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#to use: python3 resources/cgi/add.cgi "num1=6&num2=994"
-
 import cgi, cgitb
 cgitb.enable()
 
