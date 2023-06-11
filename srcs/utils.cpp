@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/09 17:38:40 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/11 13:15:21 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,8 +32,8 @@ std::string	trim_spaces(std::string str)
 		}
 		++index;
 	}
-	if (new_string.back() == ' ')
-		new_string.pop_back();
+	if (new_string[new_string.size() - 1] == ' ')
+		new_string = new_string.substr(0, new_string.size() - 1);
 	return (new_string);
 }
 

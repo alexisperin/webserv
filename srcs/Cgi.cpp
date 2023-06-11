@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:37:51 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/09 11:47:45 by aperin           ###   ########.fr       */
+/*   Updated: 2023/06/11 13:59:46 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,6 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 	std::cout << "Constructor of cgi called" << std::endl << std::endl;
 	// display_special_characters(header);
 	// std::cout << std::endl << "cgi_path: " << file_path << std::endl;
-
-	//setup env
-	char **envp = set_envp(saved_root);
-	for (int index = 0; envp[index]; index++)
-			std::cout << "env line: " << envp[index] << std::endl;
 
 	//check if body received is of correct size
 	//and send said body to std::cout after duping it
@@ -65,6 +60,11 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 		serv->send_error(500, "500 Internal Server Error");
 	if (!pid)
 	{
+		//setup env
+		char **envp = set_envp(saved_root);
+		for (int index = 0; envp[index]; index++)
+				std::cout << "env line: " << envp[index] << std::endl;
+
 		char **args = get_execve_args();
 		if (dup2(pipe_fd[1], 1) == -1)
 			serv->send_error(500, "500 Internal Server Error");
@@ -80,12 +80,12 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 		for (int index = 0; args[index]; index++)
 		{
 			std::cerr << args[index] << ", ";
-			delete args[index];
+			delete [] args[index];
 		}
-		delete args;
+		delete [] args;
 		for (int index = 0; envp[index]; index++)
-			delete envp[index];
-		delete envp;
+			delete [] envp[index];
+		delete [] envp;
 		std::cerr << std::endl;
 		std::cout << "HTTP/1.1 500 Internal Server Error\n\n";
 		exit(1);

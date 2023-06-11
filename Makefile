@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
+#    By: marvin <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/06/05 15:47:25 by yhuberla         ###   ########.fr        #
+#    Updated: 2023/06/11 13:54:52 by marvin           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,11 +16,15 @@ SRCS_DIR	= srcs
 OBJSDIR		= objs
 INCDIR		= includes
 
-SRC_FILE	= main utils Webserv Server Location Cgi
+SRC_FILES	= main utils Webserv Server Location Cgi
 
-SRCS		= $(addprefix ${SRCS_DIR}/, $(addsuffix .cpp, ${SRC_FILE}))
-OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILE})))
+SRCS		= $(addprefix ${SRCS_DIR}/, $(addsuffix .cpp, ${SRC_FILES}))
+OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILES})))
 OBJS_DIR	= $(sort $(dir $(OBJS)))
+
+# CGI_FILES	= cookie form quotes wiki
+# CGIS		= $(addprefix resources/cgi/cgi_, $(addsuffix .cpp, ${CGI_FILES}))
+# CGI_EXE		= $(addprefix resources/cgi/, $(addsuffix .cgi, ${CGI_FILES}))
 
 # ===---===---===---===---===---===---===---===---===---===---===---===---
 
@@ -34,12 +38,15 @@ INCS		= $(foreach d, $(INCDIR), -I$d)
 ${OBJSDIR}/%.o: ${SRCS_DIR}/%.cpp
 			${CC} $(SAN) ${CPPFLAGS} ${INCS} -c -o $@ $<
 
+# resources/cgi/%.cgi: resources/cgi/cgi_%.cpp
+# 			${CC} -c -o $@ $<
+
 all:		${OBJSDIR} ${NAME}
 
 $(OBJSDIR):
 			@mkdir -p ${OBJSDIR}
 
-${NAME}:	${OBJS}
+${NAME}:	${OBJS}# ${CGI_EXE}
 			${CC} ${SAN} ${CPPFLAGS} ${OBJS} -o ${NAME}
 
 clean:
@@ -47,6 +54,7 @@ clean:
 
 fclean:		clean
 			rm -f ${NAME}
+			# rm -f ${CGI_EXE}
 
 re:			fclean all
 

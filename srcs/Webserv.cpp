@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/09 17:32:09 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/11 13:16:20 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -171,7 +171,7 @@ void Webserv::setup_servers(void)
 	}
 
 	int ready;
-	size_t addrlen;
+	// size_t addrlen;
 
 	while(1)
 	{
@@ -202,7 +202,7 @@ void Webserv::setup_servers(void)
 					continue ;
 				}
 
-				addrlen = sizeof(address[index]);
+				// addrlen = sizeof(address[index]);
 				if ((polling_serv->_socket_fd = accept(pfds[index].fd, NULL, 0)) < 0)//(struct sockaddr *) &address->butnotaddressthatisup[index], (socklen_t*) &addrlen)) < 0)
 				{
 					perror("accept");
