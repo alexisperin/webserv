@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: marvin <marvin@student.42.fr>              +#+  +:+       +#+         #
+#    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/06/11 13:54:52 by marvin           ###   ########.fr        #
+#    Updated: 2023/06/12 10:52:27 by yhuberla         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,10 +22,6 @@ SRCS		= $(addprefix ${SRCS_DIR}/, $(addsuffix .cpp, ${SRC_FILES}))
 OBJS		= $(addprefix ${OBJSDIR}/, $(addsuffix .o, $(basename ${SRC_FILES})))
 OBJS_DIR	= $(sort $(dir $(OBJS)))
 
-# CGI_FILES	= cookie form quotes wiki
-# CGIS		= $(addprefix resources/cgi/cgi_, $(addsuffix .cpp, ${CGI_FILES}))
-# CGI_EXE		= $(addprefix resources/cgi/, $(addsuffix .cgi, ${CGI_FILES}))
-
 # ===---===---===---===---===---===---===---===---===---===---===---===---
 
 CC			= c++
@@ -38,15 +34,12 @@ INCS		= $(foreach d, $(INCDIR), -I$d)
 ${OBJSDIR}/%.o: ${SRCS_DIR}/%.cpp
 			${CC} $(SAN) ${CPPFLAGS} ${INCS} -c -o $@ $<
 
-# resources/cgi/%.cgi: resources/cgi/cgi_%.cpp
-# 			${CC} -c -o $@ $<
-
 all:		${OBJSDIR} ${NAME}
 
 $(OBJSDIR):
 			@mkdir -p ${OBJSDIR}
 
-${NAME}:	${OBJS}# ${CGI_EXE}
+${NAME}:	${OBJS}
 			${CC} ${SAN} ${CPPFLAGS} ${OBJS} -o ${NAME}
 
 clean:
@@ -54,7 +47,6 @@ clean:
 
 fclean:		clean
 			rm -f ${NAME}
-			# rm -f ${CGI_EXE}
 
 re:			fclean all
 

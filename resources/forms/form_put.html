@@ -1,0 +1,21 @@
+<html>
+<head>
+	<link rel="stylesheet" href="../css/form.css">
+</head> 
+<body>
+	<div class="global-box">
+		<h2>Put request</h2>
+		<form action="/cgi/form.cgi" method="post" enctype="multipart/form-data">
+			<div class="put-box">
+				<input type="file" name="file" required="" accept="image/png, image/jpeg, text/css, application/pdf, image/gif, image/jpg, text/html, text/plain">
+				<label>File name</label>
+			</div>
+			<div class="user-box">
+				<input type="text" name="target" required="">
+				<label>Target name</label>
+			</div>
+			<button class="btn3" type="put" name="put">put</button>
+		</form>
+	</div>
+</body>
+</html>

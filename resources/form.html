@@ -4,27 +4,11 @@
 </head> 
 <body>
 	<div class="global-box">
-		<h2>Webserv</h2>
-		<form action="/cgi/form.cgi">
-			<div class="user-box">
-				<input type="text" name="file" required="">
-				<label>File name</label>
-			</div>
-			<div class="user-box">
-				<input type="text" name="target">
-				<label>Target name</label>
-			</div>
-			<!-- <a href="/cgi/.js">
-				<span></span>
-				<span></span>
-				<span></span>
-				<span></span>
-				Submit
-			</a> -->
-			<button type="get" name="get">get</button>
-			<button class="btn2" type="put" name="put">put</button>
-			<button class="btn3" type="del" name="del">delete</button>
-		</form>
+		<h2>Form</h2>
+		<h2>What do you want to do?</h2>
+		<button onclick="location.href = '/forms/form_get.html';" type="get" name="get">get</button>
+		<button onclick="location.href = '/forms/form_put.html';" class="btn2" type="put" name="put">put</button>
+		<button onclick="location.href = '/forms/form_delete.html';" class="btn3" type="del" name="del">delete</button>
 	</div>
 </body>
 </html>

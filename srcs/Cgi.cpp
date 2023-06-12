@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.cpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:37:51 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/11 15:00:57 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/12 17:01:06 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,6 +45,7 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 		if (expected_size > serv->_current_body_size * 1000000)
 			serv->send_error(413, "413 Payload Too Large");
 		std::string body = get_body(header);
+		std::cout << "body size: " << body.size() << " vs expected size: " << expected_size << std::endl;
 		if (body.size() != expected_size)
 			serv->send_error(412, "412 Precondition Failed");
 		write(body_fd[1], body.c_str(), body.size());
@@ -205,7 +206,7 @@ char **Cgi::set_envp(std::string saved_root)
 	env_map.insert(std::pair<std::string, std::string>("SCRIPT_NAME", get_script_relative(saved_root)));
 	env_map.insert(std::pair<std::string, std::string>("REMOTE_HOST", get_remote_host()));
 	add_server_names(env_map);
-	add_header_field(env_map, "CONTENT_TYPE", "Sec-Fetch-Dest: ");
+	add_header_field(env_map, "CONTENT_TYPE", "Content-Type: ");
 	add_header_field(env_map, "CONTENT_LENGTH", "Content-Length: ");
 	add_header_field(env_map, "HTTP_ACCEPT", "Accept: ");
 	add_header_field(env_map, "HTTP_ACCEPT_LANGUAGE", "Accept-Language: ");

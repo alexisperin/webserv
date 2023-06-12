@@ -314,7 +314,7 @@ void Server::analyse_request(std::string bufstr)
 
 	if (check_http_version(bufstr))
 		send_error(505, "505 HTTP Version Not Supported");
-	if (check_correct_host(bufstr) || check_header_names(bufstr))
+	if (check_correct_host(bufstr, this->_server_names) || check_header_names(bufstr))
 		send_error(400, "400 Bad Request");
 	if (!bufstr.compare(0, 4, "GET ") || !bufstr.compare(0, 5, "HEAD "))
 	{

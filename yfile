@@ -48,11 +48,11 @@ TO DO:
 	good - directory listing(autoindex)
 	- server names ???
 	good - body_size in locations
-	- body in DELETE ??
+	good - body in DELETE ??
 	- PUT with b.i.g. file sometimes stops
 	good - .bla in location
 	- 414 Request-URI Too Long
-	-CGI: (CGI (the Common Gateway Interface, as it defines a common way for server software to interface with scripts))
+	good -CGI: (CGI (the Common Gateway Interface, as it defines a common way for server software to interface with scripts))
 		- set document type for GET method
 		- the HTTP server runs the specified script and passes the output of the script to the Web browser.
 			That is, anything that the script sends to standard output is passed to the Web client instead of 
@@ -62,3 +62,6 @@ TO DO:
 			 (in this example, /with/additional/path), then that path is stored in the PATH_INFO environment variable before
 				 the script is called
 		-  If parameters are sent to the script via an HTTP POST request, they are passed to the script's standard input.
+
+
+bind: already in use

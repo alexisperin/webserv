@@ -74,6 +74,36 @@ body {
 	font-size: 12px;
 }
 
+.global-box .put-box {
+	position: relative;
+}
+
+.global-box .put-box input {
+	width: 100%;
+	padding: 10px 0;
+	font-size: 16px;
+	color: #fff;
+	margin-bottom: 30px;
+	border: none;
+	border-bottom: 1px solid #fff;
+	outline: none;
+	background: transparent;
+}
+.global-box .put-box label {
+	position: absolute;
+	top: -20px;
+	left: 0;
+	padding: 10px 0;
+	font-size: 12px;
+	color: #fff;
+	pointer-events: none;
+}
+
+.global-box .put-box input:focus ~ label,
+.global-box .put-box input:valid ~ label {
+	color: #03e9f4;
+}
+
 .global-box .number-box {
 	position: relative;
 }
@@ -127,6 +157,27 @@ body {
   }
 
 .global-box form button {
+	position: relative;
+	display: inline-block;
+	padding: 10px 20px;
+	color: #03e9f4;
+	font-size: 16px;
+	text-decoration: none;
+	text-transform: uppercase;
+	overflow: hidden;
+	margin-top: 40px;
+	letter-spacing: 4px;
+	
+	outline: none;
+	cursor: pointer;
+	border: none;
+	background-color: #243b55;
+	border-radius: 10px;
+
+	width: 120px;
+}
+
+.global-box button {
 	position: relative;
 	display: inline-block;
 	padding: 10px 20px;

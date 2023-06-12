@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/11 13:15:21 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/12 13:55:44 by yhuberla         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ int check_http_version(std::string bufstr)
 	return (bufstr.compare(index - 8, 8, "HTTP/1.1"));
 }
 
-int check_correct_host(std::string bufstr)
+int check_correct_host(std::string bufstr, std::list<std::string> server_names)
 {
 	size_t index = bufstr.find("Host: ");
 	if (index == std::string::npos)
@@ -73,7 +73,14 @@ int check_correct_host(std::string bufstr)
 	size_t multiple_host = bufstr.find("Host: ", index + 1);
 	if (multiple_host != std::string::npos)
 		return (1);
-	//TODO check if host in server_name or not (may put this func as private in class Server)
+	
+	std::list<std::string>::iterator it = server_names.begin();
+	std::list<std::string>::iterator ite = server_names.end();
+	for (; it != ite; it++)
+	{
+		if (!bufstr.compare(index + 6, (*it).size(), *it))
+			return (0);
+	}
 	return (bufstr.compare(index + 6, 9, "localhost") && bufstr.compare(index + 6, 9, "127.0.0.1"));
 }
 
