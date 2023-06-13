@@ -221,6 +221,7 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	size_t match_index;
 	bool auto_index;
 	std::list<std::string> match_index_files;
+	this->_current_body_size = this->_body_size;
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
 		size_t loc_size = this->_locations[loc_index]->location.size();
@@ -238,7 +239,8 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 				match_index = loc_index;
 				match_index_files = this->_locations[loc_index]->index_files;
 				auto_index = this->_locations[loc_index]->auto_index;
-				this->_current_body_size = this->_locations[loc_index]->body_size;
+				if (this->_locations[loc_index]->body_size)
+					this->_current_body_size = this->_locations[loc_index]->body_size;
 				if (this->_locations[loc_index]->suffixed)
 				{
 					match_size = 1;
@@ -426,6 +428,8 @@ void Server::analyse_request(std::string bufstr)
 		}
 		send(this->_socket_fd, content.c_str(), content.size(), 0);
 	}
+	else
+		this->send_error(400, "400 Bad Request");
 }
 
 // ************************************************************************** //
@@ -647,11 +651,7 @@ void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)
 	std::list<int>::iterator it = this->_ports.begin();
 	std::list<int>::iterator ite = this->_ports.end();
 	for (; it != ite; it++)
-	{
-		if (all_ports.find(*it) != all_ports.end())
-			it = this->_ports.erase(it);
 		all_ports.insert(*it);
-	}
 }
 
 // ************************************************************************** //

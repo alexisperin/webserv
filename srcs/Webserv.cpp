@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/11 13:16:20 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/13 11:03:24 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,6 +85,8 @@ void Webserv::init(std::string file_name)
 	std::list<Server *>::iterator ite = this->_servers.end();
 	for (; it != ite; it++)
 		(*it)->add_ports(all_ports, &number_of_ports);
+	if (all_ports.size() != number_of_ports)
+		throw Webserv::InvalidFileContentException();
 }
 
 void Webserv::display_servs_content(void)
