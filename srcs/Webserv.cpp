@@ -6,7 +6,7 @@
 /*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/11 13:16:20 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/14 17:45:37 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -211,7 +211,9 @@ void Webserv::setup_servers(void)
 
 				try
 				{
-					std::string bufstr = polling_serv->recv_lines(1);
+					std::string bufstr;
+					polling_serv->recv_lines(bufstr, 1);
+					std::cout << "bufstr size: " << bufstr.size() << std::endl;
 					polling_serv->analyse_request(bufstr);
 				}
 				catch (std::exception & e) {/*std::cerr << e.what() << std::endl;*/}

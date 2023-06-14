@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_form.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/12 17:15:13 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/14 18:57:26 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -168,14 +168,19 @@ class Parse
 						send_error("no boundary in post");
 				}
 
+				std::cerr << "boundary: " << boundary << std::endl;
+
 				std::string body;
 				std::string line;
 				while (!std::cin.eof()) {
 					std::getline( std::cin, line );
-					body += line;
+					// std::cerr << "new line of size " << line.size() << std::endl;
+					body.append(line);
 					if (!std::cin.eof())
 						body += '\n';
 				}
+
+				std::cerr << "body size: " << body.size() << std::endl;
 
 				size_t first_bound = body.find(boundary);
 				if (first_bound == std::string::npos)

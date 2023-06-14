@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/23 14:52:49 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/09 17:30:54 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/14 17:36:15 by marvin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ class Server
 		std::list<std::string> _server_names; // server_name bla.com;
 		void check_set_default(void);
 		void display_serv_content(void);
-		std::string recv_lines(int check_header);
+		void recv_lines(std::string & bufstr, int check_header);
 		void analyse_request(std::string bufstr);
 		void send_message(std::string msg);
 		void send_error(int err_code, std::string errstr);

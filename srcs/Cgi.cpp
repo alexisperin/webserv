@@ -12,6 +12,8 @@
 
 #include "Cgi.hpp"
 #include "unistd.h"
+ #include <sys/stat.h>
+       #include <fcntl.h>
 Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string saved_root)
 		: _header(header), _file_path(file_path), _serv(serv)
 {
@@ -23,8 +25,11 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 	//and send said body to std::cout after duping it
 	// if GET + query => '?' in URL, which we put in QUERY_STRING env var
 	// if POST + body, print it to std::in of cgi
-	int body_fd[2];
-	if (pipe(body_fd) == -1)
+	int body_fd = open(".body_fd", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (body_fd == -1)
+		serv->send_error(500, "500 Internal Server Error");
+	int response_fd = open(".response_fd", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (response_fd == -1)
 		serv->send_error(500, "500 Internal Server Error");
 	size_t index = header.find("Content-Length: ");
 	size_t expected_size = std::string::npos;
@@ -46,35 +51,56 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 			serv->send_error(413, "413 Payload Too Large");
 		std::string body = get_body(header);
 		std::cout << "body size: " << body.size() << " vs expected size: " << expected_size << std::endl;
+		if (body.size() < expected_size)
+		{
+			// serv->send_message("100 Continue");
+			serv->recv_lines(body, 0);
+		}
+			std::cout << "body size: " << body.size() << " vs expected size: " << expected_size << std::endl;
 		if (body.size() != expected_size)
 			serv->send_error(412, "412 Precondition Failed");
-		write(body_fd[1], body.c_str(), body.size());
+		
+		// following lines show that there are \0 in bufstr
+		// const char *bodystr = body.c_str();
+		// std::cout << "After .c_str" << std::endl;
+		// std::string tmp(bodystr);
+		// std::cout << tmp.size() << std::endl;
+		write(body_fd, body.c_str(), body.size());
+		close(body_fd); //can we use lseek to reset cursor instead of doing this, in the same way,  can we use tmpfile ??
+		body_fd = open(".body_fd", O_RDONLY);
+		if (body_fd == -1)
+			serv->send_error(500, "500 Internal Server Error");
+		std::cout << "After write" << std::endl;
 	}
 
 	//fork and call cgi
 
-	int pipe_fd[2];
-	if (pipe(pipe_fd) == -1)
-		serv->send_error(500, "500 Internal Server Error");
 	pid_t pid = fork();
 	if (pid == -1)
 		serv->send_error(500, "500 Internal Server Error");
 	if (!pid)
 	{
+	std::cout << "in child" << std::endl;
 		//setup env
 		char **envp = set_envp(saved_root);
 		for (int index = 0; envp[index]; index++)
 				std::cout << "env line: " << envp[index] << std::endl;
 
 		char **args = get_execve_args();
-		if (dup2(pipe_fd[1], 1) == -1)
-			serv->send_error(500, "500 Internal Server Error");
-		close(pipe_fd[0]);
-		close(pipe_fd[1]);
-		if (dup2(body_fd[0], 0) == -1)
-			serv->send_error(500, "500 Internal Server Error");
-		close(body_fd[0]);
-		close(body_fd[1]);
+		if (dup2(response_fd, 1) == -1)
+		{
+			std::cerr << "dup2 response_fd" << std::endl;
+			std::cout << "HTTP/1.1 500 Internal Server Error\n\n";
+			exit(1);
+		}
+		close(response_fd);
+		if (dup2(body_fd, 0) == -1)
+		{
+			std::cerr << "dup2 body_Fd" << std::endl;
+			std::cout << "HTTP/1.1 500 Internal Server Error\n\n";
+			exit(1);
+		}
+		close(body_fd);
 		execve(args[0], args, envp);
 		perror(args[0]);
 		std::cerr << "execve failure args = ";
@@ -91,32 +117,37 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 		std::cout << "HTTP/1.1 500 Internal Server Error\n\n";
 		exit(1);
 	}
-	close(body_fd[0]);
-	close(body_fd[1]);
-	close(pipe_fd[1]);
+	close(body_fd);
+	close(response_fd);
+	std::cout << "Before waitpid" << std::endl;
+	waitpid(pid, NULL, 0);
+
+	response_fd = open(".response_fd", O_RDONLY);
+	if (response_fd == -1)
+		serv->send_error(500, "500 Internal Server Error");
+	std::cout << "After child" << std::endl;
 
 	//read from std::in to send message back to server
 
 	std::string bufstr;
 	char buffer[BUFFER_SIZE + 1] = {0};
-	ssize_t valread = read(pipe_fd[0], buffer, BUFFER_SIZE);
+	ssize_t valread = read(response_fd, buffer, BUFFER_SIZE);
 	if (valread == -1)
 		serv->send_error(500, "500 Internal Server Error");
-	bufstr += buffer;
+	bufstr.append(buffer, valread);
 	while (valread == BUFFER_SIZE)
 	{
-		valread = read(pipe_fd[0], buffer, BUFFER_SIZE);
+		valread = read(response_fd, buffer, BUFFER_SIZE);
 		if (valread == -1)
 			serv->send_error(500, "500 Internal Server Error");
 		else if (valread)
 		{
 			buffer[valread] = '\0';
-			bufstr += buffer;
+			bufstr.append(buffer, valread);
 		}
 		// std::cout << "valread: " << valread << std::endl;
 	}
-	close(pipe_fd[0]);
-	waitpid(pid, NULL, 0);
+	close(response_fd);
 
 	std::cout << "RETURN CGI:\n" + bufstr;
 

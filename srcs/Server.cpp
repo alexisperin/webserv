@@ -186,30 +186,31 @@ void Server::check_for_cgi(std::string header, std::string file_path, int method
 	Cgi(header, file_path, this, saved_root);
 }
 
-std::string Server::recv_lines(int check_header)
+void Server::recv_lines(std::string & bufstr, int check_header)
 {
-	std::string bufstr;
 	char buffer[BUFFER_SIZE + 1] = {0};
 	ssize_t valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
 	if (valread == -1)
 		send_error(500, "500 Internal Server Error");
-	bufstr += buffer;
+	bufstr.append(buffer, valread);
+	std::cout << "bufstr current size: " << bufstr.size() << std::endl;
 	while (valread == BUFFER_SIZE) //TODO what if request of exactly BUFFER_SIZE bytes
 	{
-		send_message("100 Continue");
+		// send_message("100 Continue");
 		valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
+		std::cout << "another one " << valread << std::endl;
 		if (valread == -1)
 			send_error(500, "500 Internal Server Error");
 		else if (valread)
 		{
 			buffer[valread] = '\0';
-			bufstr += buffer;
+			bufstr.append(buffer, valread);
+			std::cout << "bufstr current size: " << bufstr.size() << std::endl;
 		}
 		// std::cout << "valread: " << valread << std::endl;
 	}
 	if (check_header)
 		bufstr = check_chunck_encoding(bufstr);
-	return (bufstr);
 }
 
 std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method, bool recursive_stop)
@@ -385,7 +386,7 @@ void Server::analyse_request(std::string bufstr)
 			if (body.empty() && expected_size)
 			{
 				send_message("100 Continue");
-				body = recv_lines(0);	
+				recv_lines(body, 0);	
 			}
 			receive_put_content(body, outdata, expected_size, content);
 			outdata.close();
