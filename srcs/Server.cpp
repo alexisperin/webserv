@@ -239,7 +239,7 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 				match_index = loc_index;
 				match_index_files = this->_locations[loc_index]->index_files;
 				auto_index = this->_locations[loc_index]->auto_index;
-				if (this->_locations[loc_index]->body_size)
+				if (this->_locations[loc_index]->body_size != std::string::npos)
 					this->_current_body_size = this->_locations[loc_index]->body_size;
 				if (this->_locations[loc_index]->suffixed)
 				{
