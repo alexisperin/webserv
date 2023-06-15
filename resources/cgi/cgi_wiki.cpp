@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_wiki.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/07 16:48:39 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/15 14:24:21 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,24 +16,6 @@
 
 int main()
 {
-// 	std::string html_content;
-// 	std::ostringstream content_length;
-
-// 	html_content += "<html>\
-// <head>\
-//   <link rel=\"stylesheet\" href=\"../css/wiki.css\">\
-// </head> \
-// <body>\
-//   <div class=\"container\">\
-//     <img class=\"image\" src=\"../images/wiki.png\" alt=\"Wiki Logo\" width=\"100\" height=\"100\">\
-//     <div class=\"box\">\
-//       <div class=\"text\">what u want ?</div>\
-// 	    <a href=\"https://en.wikipedia.org\"><button class=\"button button1\">Search wiki</button></a>\
-//     </div>\
-// </div>\
-// </body>\
-// </html>";  TODO + -> _
-
 	std::string input;
 	std::cin >> input;
 	std::cerr << "INFO READ IN CGI: " << input << std::endl;
@@ -55,11 +37,8 @@ int main()
 		search = "42_(school)";
 
 	std::string content = "HTTP/1.1 307 Temporary Redirect\n";
-	// content_length << html_content.size();
 
 	content += "location: https://en.wikipedia.org/wiki/" + search + "\n\n";
-	// content += "Content-Type:text/html\nContent-Length: ";
-	// content += content_length.str() + "\n\n" + html_content;
 	std::cout << content << std::endl;
 	return 0;
 }

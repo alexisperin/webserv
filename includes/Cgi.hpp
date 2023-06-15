@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Cgi.hpp                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/05 15:35:48 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/08 16:05:34 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/15 13:41:35 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 # include <unistd.h>
 # include <map>
 # include "utils.hpp"
+# include <sys/stat.h>
+# include <fcntl.h>
 
 class Server;
 

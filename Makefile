@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+         #
+#    By: aperin <aperin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/05/12 11:18:06 by aperin            #+#    #+#              #
-#    Updated: 2023/06/12 10:52:27 by yhuberla         ###   ########.fr        #
+#    Updated: 2023/06/15 14:54:20 by aperin           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -25,7 +25,7 @@ OBJS_DIR	= $(sort $(dir $(OBJS)))
 # ===---===---===---===---===---===---===---===---===---===---===---===---
 
 CC			= c++
-SAN			= -fsanitize=address -g
+SAN			= #-fsanitize=address -g
 CPPFLAGS	= -Wall -Wextra -Werror -std=c++98
 INCS		= $(foreach d, $(INCDIR), -I$d)
 

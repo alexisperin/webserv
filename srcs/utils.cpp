@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:37:52 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/12 13:55:44 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/15 15:13:57 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,9 +112,12 @@ int check_header_names(std::string bufstr)
 	return (0);
 }
 
-void display_special_characters(std::string str)
+void display_special_characters(std::string str, bool only_header)
 {
-	for (size_t index = 0; index < str.size(); ++index)
+	size_t header_limit = str.find("\r\n\r\n");
+	if (!only_header || header_limit == std::string::npos)
+		header_limit = str.size();
+	for (size_t index = 0; index < header_limit; ++index)
 	{
 		char c = str[index];
 
@@ -132,23 +135,15 @@ void display_special_characters(std::string str)
 			case '\t':
 				std::cout << "\\t";
 				break;
-
-			// TODO: Add other C character escapes here.  See:
-			// <https://en.wikipedia.org/wiki/Escape_sequences_in_C#Table_of_escape_sequences>
-
 			default:
 				if (isprint(c))
-				{
 					std::cout << c;
-				}
 				else
-				{
 					std::cout << '|' << c + '0' << '|';
-				}
 				break;
 		}
 	}
-	std::cout << "EOF" << std::endl;
+	std::cout << "EOF\n" << std::endl;
 }
 
 std::string get_body(std::string bufstr)

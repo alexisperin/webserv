@@ -19,7 +19,6 @@ Server::Server(void) : _body_size(1), _body_sighted(false)
 
 Server::~Server(void)
 {
-	// std::cout << "Destructor of Server called." << std::endl;
 	this->_ports.clear();
 	this->_server_names.clear();
 	this->_index_files.clear();
@@ -130,40 +129,34 @@ std::string Server::get_first_index_file(std::string root, std::list<std::string
 	return ("");
 }
 
-std::string Server::check_chunck_encoding(std::string bufstr)
+void Server::check_chunck_encoding(std::string & bufstr)
 {
 	if (bufstr.find("Transfer-Encoding: chunked") == std::string::npos)
-		return  (bufstr);
+		return ;
 	std::string sub_bufstr;
 	char buffer[BUFFER_SIZE + 1] = {0};
-	// send_error(this->_socket_fd, 100, "100 Continue");
+	send_message("100 Continue");
 	ssize_t valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
 	if (valread == -1)
 		send_error(500, "500 Internal Server Error");
 	while (valread && buffer[0] != '0')
 	{
-		bufstr += buffer;
-		display_special_characters(buffer);
-		// send_error(this->_socket_fd, 100, "100 Continue");
+		bufstr.append(buffer, valread);
+		display_special_characters(buffer, 0);
+		send_message("100 Continue");
 		valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
 		if (valread == -1)
 			send_error(500, "500 Internal Server Error");
-		buffer[valread] = '\0';
-		std::cout << "first char of buffer: |" << buffer[0] << '|' << std::endl;
+		bufstr.append(buffer, valread);
+		// std::cout << "first char of buffer: |" << buffer[0] << '|' << std::endl;
 	}
-	return (bufstr);
 }
 
-/* look for "/cgi/" in file_path and call cgi if found */
 void Server::check_for_cgi(std::string header, std::string file_path, int method_offset, std::string method, std::string saved_root)
 {
 	size_t search = file_path.find("/cgi/");
 	if (search == std::string::npos)
 		return ;
-	// std::cout << "/cgi/ found in path" << std::endl;
-	// std::cout << std::endl;
-	// display_special_characters(header);
-	// std::cout << std::endl << "cgi_path: " << file_path << std::endl;
 
 	size_t end = file_path.find('/', search + 5);
 	if (end == std::string::npos)
@@ -189,45 +182,37 @@ void Server::check_for_cgi(std::string header, std::string file_path, int method
 void Server::recv_lines(std::string & bufstr, int check_header)
 {
 	char buffer[BUFFER_SIZE + 1] = {0};
-	ssize_t valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
+	ssize_t valread = read(this->_socket_fd, buffer, BUFFER_SIZE);
 	if (valread == -1)
 		send_error(500, "500 Internal Server Error");
 	bufstr.append(buffer, valread);
-	std::cout << "bufstr current size: " << bufstr.size() << std::endl;
-	while (valread == BUFFER_SIZE) //TODO what if request of exactly BUFFER_SIZE bytes
+	while (valread == BUFFER_SIZE)
 	{
-		// send_message("100 Continue");
-		valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
-		std::cout << "another one " << valread << std::endl;
+		valread = read(this->_socket_fd, buffer, BUFFER_SIZE);
 		if (valread == -1)
 			send_error(500, "500 Internal Server Error");
 		else if (valread)
 		{
 			buffer[valread] = '\0';
 			bufstr.append(buffer, valread);
-			std::cout << "bufstr current size: " << bufstr.size() << std::endl;
 		}
-		// std::cout << "valread: " << valread << std::endl;
 	}
 	if (check_header)
-		bufstr = check_chunck_encoding(bufstr);
+		check_chunck_encoding(bufstr);
 }
 
 std::string Server::get_path_from_locations(std::string & loc, int method_offset, std::string method, bool recursive_stop)
 {
-	// std::cout << "get_path_from_loc" << std::endl;
 	std::string ret;
 	std::string substr_loc = loc.substr(4 + method_offset, loc.find(" ", 4 + method_offset) - (4 + method_offset));
 	size_t match_size = 0;
 	size_t match_index;
 	bool auto_index;
 	std::list<std::string> match_index_files;
+	this->_current_body_size = this->_body_size;
 	for (size_t loc_index = 0; loc_index < this->_locations.size(); loc_index++)
 	{
 		size_t loc_size = this->_locations[loc_index]->location.size();
-		// std::cout << "match_index: " << match_index << std::endl;
-		// std::cout << "loc_size: " << loc_size << ", substr_loc.size" << substr_loc.size() << std::endl;
-		// std::cout << "loc: " << this->_locations[loc_index]->location << ", substr_loc" << substr_loc << std::endl;
 		if (loc_size <= substr_loc.size() && ((!this->_locations[loc_index]->suffixed && !substr_loc.compare(0, loc_size, this->_locations[loc_index]->location))
 			|| (this->_locations[loc_index]->suffixed && !substr_loc.compare(substr_loc.size() - loc_size, loc_size, this->_locations[loc_index]->location))))
 		{
@@ -239,7 +224,8 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 				match_index = loc_index;
 				match_index_files = this->_locations[loc_index]->index_files;
 				auto_index = this->_locations[loc_index]->auto_index;
-				this->_current_body_size = this->_locations[loc_index]->body_size;
+				if (this->_locations[loc_index]->body_size != std::string::npos)
+					this->_current_body_size = this->_locations[loc_index]->body_size;
 				if (this->_locations[loc_index]->suffixed)
 				{
 					match_size = 1;
@@ -248,7 +234,6 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 			}
 		}
 	}
-	// std::cout << "match_size: " << match_size << std::endl;
 	if (!recursive_stop && match_size && std::find(this->_locations[match_index]->methods.begin(), this->_locations[match_index]->methods.end(), method) == this->_locations[match_index]->methods.end())
 	{
 		send_method_error(this->_locations[match_index]->methods);
@@ -263,11 +248,10 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	this->_initial_loc = substr_loc;
 	std::string saved_root = ret;
 	loc = loc.substr(0, 4 + method_offset) + loc.substr(4 + method_offset + match_size);
-	// std::cout << "loc after: " << loc << std::endl;
 
 	if (!loc.compare(4 + method_offset, 2, "/ ") || !loc.compare(4 + method_offset, 1, " "))
 	{
-		if (match_index_files.empty())
+		if (!match_size)
 			ret = get_first_index_file(ret, this->_index_files, auto_index && !method.compare("GET"));
 		else
 			ret = get_first_index_file(ret, match_index_files, auto_index && !method.compare("GET"));
@@ -285,23 +269,6 @@ std::string Server::get_path_from_locations(std::string & loc, int method_offset
 	return (ret);
 }
 
-void Server::receive_put_content(std::string body, std::ofstream &outfile, size_t expected_size, std::string content)
-{
-	std::cout << "body size: " << body.size() << ", selected max_body_size: " << this->_current_body_size << std::endl;
-	// std::cout << body << std::endl;
-
-	if (body.size() > this->_current_body_size * 1000000)
-	{
-		std::cerr << "file size exceeds max_body_size of " << this->_current_body_size << "MB" << std::endl;
-		send_error(413, "413 Payload Too Large");
-	}
-	else if (body.size() != expected_size)
-		send_error(412, "412 Precondition Failed");
-
-	outfile << body;
-	send_message(content);
-}
-
 void Server::analyse_request(std::string bufstr)
 {
 	if (bufstr.empty())
@@ -310,8 +277,7 @@ void Server::analyse_request(std::string bufstr)
 		return ;
 	}
 	std::string content;
-	// std::cout << bufstr.size() << ": " << bufstr << std::endl;
-	display_special_characters(bufstr); //used for debug because /r present in buffer
+	display_special_characters(bufstr, 1);
 
 	if (check_http_version(bufstr))
 		send_error(505, "505 HTTP Version Not Supported");
@@ -320,7 +286,11 @@ void Server::analyse_request(std::string bufstr)
 	if (!bufstr.compare(0, 4, "GET ") || !bufstr.compare(0, 5, "HEAD "))
 	{
 		int head_offset = !bufstr.compare(0, 5, "HEAD ");
-		std::cout << "GET DETECTED" << std::endl;
+		if (head_offset)
+			std::cout << "GET DETECTED" << std::endl;
+		else
+			std::cout << "HEAD DETECTED" << std::endl;
+
 		std::string file_abs_path = get_path_from_locations(bufstr, head_offset, "GET", 0);
 
 		size_t qmark = file_abs_path.find('?');
@@ -363,7 +333,6 @@ void Server::analyse_request(std::string bufstr)
 		size_t index = bufstr.find("Content-Length: ");
 		if (index == std::string::npos)
 			send_error(411, "411 Length Required");
-			// send_error(201, "201 Created");
 		std::istringstream iss(bufstr.substr(index + 16, bufstr.find('\n', index + 16)));
 		size_t expected_size;
 		iss >> expected_size;
@@ -383,12 +352,10 @@ void Server::analyse_request(std::string bufstr)
 			if (!outdata.is_open())
 				send_error(404, "404 Not Found");
 			std::string body =  get_body(bufstr);
-			if (body.empty() && expected_size)
-			{
-				send_message("100 Continue");
-				recv_lines(body, 0);	
-			}
-			receive_put_content(body, outdata, expected_size, content);
+			if (body.size() != expected_size)
+				send_error(412, "412 Precondition Failed");
+			outdata << body;
+			send_message(content);
 			outdata.close();
 		}
 		else
@@ -396,11 +363,6 @@ void Server::analyse_request(std::string bufstr)
 			std::string body = get_body(bufstr);
 			if (body.size() != expected_size)
 				send_error(412, "412 Precondition Failed");
-			else if (expected_size > this->_current_body_size * 1000000)
-			{
-				std::cerr << "file size exceeds max_body_size of " << this->_current_body_size << "MB" << std::endl;
-				send_error(413, "413 Payload Too Large");
-			}
 			body = "Body received :\n" + body;
 			content = "HTTP/1.1 202 Accepted\nContent-Type: text/plain\nContent-Length: ";
 			std::ostringstream content_length;
@@ -416,17 +378,12 @@ void Server::analyse_request(std::string bufstr)
 		std::string file_abs_path = get_path_from_locations(bufstr, 3, "DELETE", 0);
 		std::cout << "Wants to delete file " << file_abs_path << std::endl;
 		if (!std::remove(file_abs_path.c_str()))
-		{
-			std::cout << "File deleted\n";
-			content = "HTTP/1.1 204 No Content\n";
-		}
+			send_error(204, "204 No Content");
 		else
-		{
-			std::cout << "File could not be deleted\n";
-			content = "HTTP/1.1 404 Not Found\n";
-		}
-		send(this->_socket_fd, content.c_str(), content.size(), 0);
+			send_error(404, "404 Not Found");
 	}
+	else
+		send_error(400, "400 Bad Request");
 }
 
 // ************************************************************************** //
@@ -648,11 +605,7 @@ void Server::add_ports(std::set<int> &all_ports, size_t *number_of_ports)
 	std::list<int>::iterator it = this->_ports.begin();
 	std::list<int>::iterator ite = this->_ports.end();
 	for (; it != ite; it++)
-	{
-		if (all_ports.find(*it) != all_ports.end())
-			it = this->_ports.erase(it);
 		all_ports.insert(*it);
-	}
 }
 
 // ************************************************************************** //

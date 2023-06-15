@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/25 13:38:43 by yhuberla          #+#    #+#             */
-/*   Updated: 2023/06/12 13:54:05 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/15 13:54:38 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ int is_error_code(int code);
 int check_http_version(std::string bufstr);
 int check_correct_host(std::string bufstr, std::list<std::string>);
 int check_header_names(std::string bufstr);
-void display_special_characters(std::string str);
+void display_special_characters(std::string str, bool only_header);
 std::string get_body(std::string bufstr);
 std::string GET_content_type(std::string file);
 char **get_execve_args(std::string file_path);

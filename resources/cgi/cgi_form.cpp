@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_form.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/14 18:57:26 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/15 14:52:48 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,7 +152,7 @@ class Parse
 
 				std::ostringstream content_length;
 				content_length << file_content.size();
-				content += content_length.str() + "\n\n" + file_content;
+				content += content_length.str() + "\r\n\r\n" + file_content;
 				std::cout << content;
 			}
 			else if (!this->_request.compare(0, 4, "POST"))
@@ -219,7 +219,7 @@ class Parse
 				
 				std::ostringstream content_length;
 				content_length << html_content.size();
-				std::cout << content_length.str() << "\n\n" << html_content << std::endl;
+				std::cout << content_length.str() << "\r\n\r\n" << html_content << std::endl;
 			
 				
 			}

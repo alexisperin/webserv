@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Webserv.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: marvin <marvin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/05/17 10:24:21 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/14 17:45:37 by marvin           ###   ########.fr       */
+/*   Updated: 2023/06/15 14:14:17 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,6 @@ Webserv::~Webserv(void)
 	for (; it != ite; it++)
 		delete *it;
 	this->_servers.clear();
-	// std::cout << "Destructor of WebServer called." << std::endl;
 }
 
 // ************************************************************************** //
@@ -51,11 +50,9 @@ void Webserv::init(std::string file_name)
 	while (!indata.eof())
 	{
 		std::getline(indata, line);
-		// std::cout << "line: " << line << std::endl;
 		line = trim_spaces(line);
 		if (!line.empty())
 		{
-					// std::cout << in_server_block << "comp :" << !line.compare("server {") << ", line: |" << line << '|' << std::endl;
 			if (!in_server_block && !line.compare("server {"))
 			{
 				in_server_block = true;
@@ -85,6 +82,8 @@ void Webserv::init(std::string file_name)
 	std::list<Server *>::iterator ite = this->_servers.end();
 	for (; it != ite; it++)
 		(*it)->add_ports(all_ports, &number_of_ports);
+	if (all_ports.size() != number_of_ports)
+		throw Webserv::InvalidFileContentException();
 }
 
 void Webserv::display_servs_content(void)
@@ -103,7 +102,7 @@ Server *Webserv::get_polling_serv(uint16_t sin_port)
 	std::list<Server *>::iterator it = this->_servers.begin();
 	std::list<Server *>::iterator ite = this->_servers.end();
 
-	std::cout << "sin_port: " << (int)sin_port << std::endl;
+	std::cout << "sin_port: " << (int) sin_port << std::endl;
 	for (; it != ite; it++)
 	{
 		std::list<int>::iterator pit = (*it)->_ports.begin();
@@ -171,7 +170,6 @@ void Webserv::setup_servers(void)
 	}
 
 	int ready;
-	// size_t addrlen;
 
 	while(1)
 	{
@@ -202,8 +200,7 @@ void Webserv::setup_servers(void)
 					continue ;
 				}
 
-				// addrlen = sizeof(address[index]);
-				if ((polling_serv->_socket_fd = accept(pfds[index].fd, NULL, 0)) < 0)//(struct sockaddr *) &address->butnotaddressthatisup[index], (socklen_t*) &addrlen)) < 0)
+				if ((polling_serv->_socket_fd = accept(pfds[index].fd, NULL, 0)) < 0)
 				{
 					perror("accept");
 					return ;
@@ -213,15 +210,14 @@ void Webserv::setup_servers(void)
 				{
 					std::string bufstr;
 					polling_serv->recv_lines(bufstr, 1);
-					std::cout << "bufstr size: " << bufstr.size() << std::endl;
+					fcntl(polling_serv->_socket_fd, F_SETFL, O_NONBLOCK);
 					polling_serv->analyse_request(bufstr);
 				}
-				catch (std::exception & e) {/*std::cerr << e.what() << std::endl;*/}
+				catch (std::exception & e) {}
 				std::cout << std::endl << "------------------content message sent to " << polling_serv->_socket_fd << "-------------------\n";
 				close(polling_serv->_socket_fd);
 			}
 		}
-		// return ;
 	}
 }
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_login.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/12 17:13:00 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/15 14:46:36 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,10 +44,10 @@ class Parse
 				if (!var.compare(0, 13, "QUERY_STRING="))
 				{
 					this->_query = var.substr(13);
-					for (size_t index; this->_query[index]; index++)
+					for (size_t sub_index = 0; this->_query[sub_index]; sub_index++)
 					{
-						if (this->_query[index] == '+')
-							this->_query[index] = ' ';
+						if (this->_query[sub_index] == '+')
+							this->_query[sub_index] = ' ';
 					}
 				}
 				else if (!var.compare(0, 12, "SERVER_PORT="))
@@ -164,7 +164,6 @@ int main(int ac, char **av, char **envp)
 		send_error("takes no argument");
 	
 	Parse parsing(envp);
-
 	parsing.set_info();
 	parsing.handle_request();
 	return (0);

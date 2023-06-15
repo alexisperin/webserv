@@ -12,14 +12,11 @@
 
 #include "Cgi.hpp"
 #include "unistd.h"
- #include <sys/stat.h>
-       #include <fcntl.h>
+
 Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string saved_root)
 		: _header(header), _file_path(file_path), _serv(serv)
 {
 	std::cout << "Constructor of cgi called" << std::endl << std::endl;
-	// display_special_characters(header);
-	// std::cout << std::endl << "cgi_path: " << file_path << std::endl;
 
 	//check if body received is of correct size
 	//and send said body to std::cout after duping it
@@ -50,27 +47,14 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 		if (expected_size > serv->_current_body_size * 1000000)
 			serv->send_error(413, "413 Payload Too Large");
 		std::string body = get_body(header);
-		std::cout << "body size: " << body.size() << " vs expected size: " << expected_size << std::endl;
-		if (body.size() < expected_size)
-		{
-			// serv->send_message("100 Continue");
-			serv->recv_lines(body, 0);
-		}
-			std::cout << "body size: " << body.size() << " vs expected size: " << expected_size << std::endl;
 		if (body.size() != expected_size)
 			serv->send_error(412, "412 Precondition Failed");
 		
-		// following lines show that there are \0 in bufstr
-		// const char *bodystr = body.c_str();
-		// std::cout << "After .c_str" << std::endl;
-		// std::string tmp(bodystr);
-		// std::cout << tmp.size() << std::endl;
 		write(body_fd, body.c_str(), body.size());
-		close(body_fd); //can we use lseek to reset cursor instead of doing this, in the same way,  can we use tmpfile ??
+		close(body_fd);
 		body_fd = open(".body_fd", O_RDONLY);
 		if (body_fd == -1)
 			serv->send_error(500, "500 Internal Server Error");
-		std::cout << "After write" << std::endl;
 	}
 
 	//fork and call cgi
@@ -80,7 +64,6 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 		serv->send_error(500, "500 Internal Server Error");
 	if (!pid)
 	{
-	std::cout << "in child" << std::endl;
 		//setup env
 		char **envp = set_envp(saved_root);
 		for (int index = 0; envp[index]; index++)
@@ -119,13 +102,11 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 	}
 	close(body_fd);
 	close(response_fd);
-	std::cout << "Before waitpid" << std::endl;
 	waitpid(pid, NULL, 0);
 
 	response_fd = open(".response_fd", O_RDONLY);
 	if (response_fd == -1)
 		serv->send_error(500, "500 Internal Server Error");
-	std::cout << "After child" << std::endl;
 
 	//read from std::in to send message back to server
 
@@ -145,11 +126,11 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 			buffer[valread] = '\0';
 			bufstr.append(buffer, valread);
 		}
-		// std::cout << "valread: " << valread << std::endl;
 	}
 	close(response_fd);
 
-	std::cout << "RETURN CGI:\n" + bufstr;
+	std::cout << "RETURN CGI:\n";
+	display_special_characters(bufstr, 1);
 
 	//parsing of read input
 
@@ -165,6 +146,8 @@ Cgi::Cgi(std::string header, std::string file_path, Server *serv, std::string sa
 
 	send(serv->_socket_fd, bufstr.c_str(), bufstr.size(), 0);
 
+	std::remove(".body_fd");
+	std::remove(".response_fd");
 	throw Webserv::QuickerReturnException(); 
 }
 
@@ -214,7 +197,6 @@ char **Cgi::set_envp(std::string saved_root)
     PATH_TRANSLATED: corresponding full path as supposed by server. == saved_root+PATH_INFO
     SCRIPT_NAME: relative path to the program, like /cgi-bin/script.cgi. -> file_path - saved_root
     REMOTE_HOST: host name of the client, unset if server did not perform such lookup.
-*   //REMOTE_ADDR: IP address of the client (dot-decimal). -> getaddrinfo ?
 
     SERVER_NAME: host name of the server, may be dot-decimal IP address. -> serv->serv_names w/ ':'
     CONTENT_TYPE: Internet media type of input data if PUT or POST method are used, as provided via HTTP header. -> Sec-Fetch-Dest
@@ -223,17 +205,14 @@ char **Cgi::set_envp(std::string saved_root)
 	HTTP_ACCEPT_LANGUAGE
 	HTTP_USER_AGENT
 	QUERY_STRING: the part of URL after the "?" character. The query string may be composed of *name=value pairs separated with ampersands (such as var1=val1&var2=val2...) when used to submit form data transferred via GET method as defined by HTML application/x-www-form-urlencoded.
-	
- *	//HTTP_COOKIE for now
+	HTTP_COOKIE
 	*/
 
 	std::map<std::string, std::string> env_map;
 	env_map.insert(std::pair<std::string, std::string>("SERVER_PROTOCOL", "HTTP/1.1"));
 	env_map.insert(std::pair<std::string, std::string>("SERVER_PORT", get_port()));
 	env_map.insert(std::pair<std::string, std::string>("REQUEST_METHOD", get_method()));
-	// env_map.insert(std::pair<std::string, std::string>("PATH_INFO", 
 	add_path_info(env_map, saved_root);
-	// env_map.insert(std::pair<std::string, std::string>("PATH_TRANSLATED", get_path_translated()));
 	env_map.insert(std::pair<std::string, std::string>("SCRIPT_NAME", get_script_relative(saved_root)));
 	env_map.insert(std::pair<std::string, std::string>("REMOTE_HOST", get_remote_host()));
 	add_server_names(env_map);
