@@ -189,12 +189,21 @@ void Server::check_for_cgi(std::string header, std::string file_path, int method
 std::string Server::recv_lines(int check_header)
 {
 	std::string bufstr;
+	std::string boundary;
 	char buffer[BUFFER_SIZE + 1] = {0};
 	ssize_t valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);
 	if (valread == -1)
 		send_error(500, "500 Internal Server Error");
 	bufstr += buffer;
-	while (valread == BUFFER_SIZE) //TODO what if request of exactly BUFFER_SIZE bytes
+	size_t index = bufstr.find("boundary=");
+	if (index != std::string::npos)
+	{
+		size_t end_index = bufstr.find("\r\n", index + 9);
+		if (end_index == std::string::npos)
+			send_error(400, "Bad Request");
+		boundary = bufstr.substr(index + 9, end_index - index - 9);
+	}
+	while (valread == BUFFER_SIZE || (!boundary.empty() && bufstr.find(boundary + "--") == std::string::npos)) //TODO what if request of exactly BUFFER_SIZE bytes
 	{
 		send_message("100 Continue");
 		valread = recv(this->_socket_fd, buffer, BUFFER_SIZE, 0);

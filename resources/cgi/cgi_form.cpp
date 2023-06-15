@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   cgi_form.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yhuberla <yhuberla@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aperin <aperin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/06/06 14:25:29 by aperin            #+#    #+#             */
-/*   Updated: 2023/06/12 17:15:13 by yhuberla         ###   ########.fr       */
+/*   Updated: 2023/06/15 13:01:29 by aperin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -244,9 +244,12 @@ int main(int ac, char **av, char **envp)
 	if (ac != 1)
 		send_error("takes no argument");
 	
-	Parse parsing(envp);
+	// Parse parsing(envp);
 
-	parsing.set_info();
-	parsing.handle_request();
+	// parsing.set_info();
+	// parsing.handle_request();
+	std::string body;
+	std::cin >> body;
+	std::cerr << "BODY IN CGI:\n" << body << "\nEND BODY IN CGI\n";
 	return (0);
 }
